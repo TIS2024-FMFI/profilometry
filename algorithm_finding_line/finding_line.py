@@ -8,10 +8,11 @@ class HladanieCiary():
     Pre aplikovanie na cely subor fotiek, treba nastavit path, kde sa fotky nachadzaju, a out_path, kde chceme fotky ulozit a je
     potrebne vytvorit tento subor.
     '''
-    def __init__(self,path, out_path = "",zobraz = False):
+    def __init__(self,path, out_path = "",zobraz = False, pripona = 'jpg'):
         self.path = path
         self.out_path = out_path
         self.zobraz = zobraz
+        self.pripona = pripona
     
     def hladaj_ciaru_alg1(self, path):
         img = cv2.imread(path)
@@ -117,9 +118,9 @@ class HladanieCiary():
         cv2.waitKey(0)
     
     def aplikuj_na_subor(self, algoritmus):
-        directory = 'images/fisrt_scans'
+        directory = self.path
         for filename in os.listdir(directory):
-            if filename.endswith(".jpg"):
+            if filename.endswith("."+self.pripona):
                 print(filename)
                 file_path = os.path.join(directory, filename)
                 try:
@@ -143,3 +144,6 @@ class HladanieCiary():
 
 # h = HladanieCiary("images\\fisrt_scans\\340-145825.jpg", "finding_line\\with_lines_point2", zobraz=False)
 # h.aplikuj_na_subor(1)
+
+h = HladanieCiary("images\skusk", "images\skusk_out", zobraz=False, pripona='png')
+h.aplikuj_na_subor(1)
