@@ -145,5 +145,5 @@ class HladanieCiary():
 # h = HladanieCiary("images\\fisrt_scans\\340-145825.jpg", "finding_line\\with_lines_point2", zobraz=False)
 # h.aplikuj_na_subor(1)
 
-h = HladanieCiary("images\skusk", "images\skusk_out", zobraz=False, pripona='png')
+h = HladanieCiary("images\\gombik", "images\\gombik_alg", zobraz=False, pripona='png')
 h.aplikuj_na_subor(1)
