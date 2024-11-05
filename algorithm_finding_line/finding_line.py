@@ -8,7 +8,7 @@ class HladanieCiary():
     Pre aplikovanie na cely subor fotiek, treba nastavit path, kde sa fotky nachadzaju, a out_path, kde chceme fotky ulozit a je
     potrebne vytvorit tento subor.
     '''
-    def __init__(self,path, out_path = "",zobraz = False, pripona = 'jpg'):
+    def __init__(self,path,out_path = "",zobraz = False, pripona = 'jpg'):
         self.path = path
         self.out_path = out_path
         self.zobraz = zobraz
@@ -29,7 +29,7 @@ class HladanieCiary():
         cl = 0
         for col in range(width):
             column_pixels = img[:, col]
-            if max(column_pixels) > 150:
+            if max(column_pixels) > 80: #150
                 if prvy ==0:
                     prvy = np.argmax(column_pixels)
                 najvacsie.append((col, np.argmax(column_pixels)))
@@ -46,26 +46,27 @@ class HladanieCiary():
         priem  =0
         objekt = []
         for i in najvacsie:
-            if abs(i[1]-prvy) < 20:
+            if abs(i[1]-prvy) < 20: #20
                 referencna.append(i)
                 priem+=i[1]
             else:
-                objekt.append(i)
+                if (i[1] > prvy):
+                    objekt.append(i)
                 
         # points = np.array(najvacsie, dtype=np.int32)
         # cv2.polylines(new_img, [points], isClosed=False, color=(0, 0, 255), thickness=2)
 
-        cv2.line(new_img, (0, priem//len(referencna)), (1500,priem//len(referencna)), (200,120,100),3)
+        cv2.line(new_img, (0, priem//len(referencna)), (img.shape[1],priem//len(referencna)), (200,120,100),3)
 
         body = np.array(objekt, np.int32)
-        cv2.polylines(new_img, [body], isClosed=False, color=(0, 0, 255), thickness=2)
+        # print(body)
+        # cv2.polylines(new_img, [body], isClosed=False, color=(0, 0, 255), thickness=2)
 
         #print(body)
-        # for i in objekt:
-        #     cv2.circle(new_img, (i[0], i[1]), radius=2, color=(0, 0, 255), thickness=-1)
+        for i in objekt:
+            cv2.circle(new_img, (i[0], i[1]), radius=2, color=(0, 0, 255), thickness=-1)
         
         return new_img
-  
   
     def hladaj_ciaru_alg2(self, path):
         img = cv2.imread(path)
@@ -111,7 +112,6 @@ class HladanieCiary():
         
         return img
     
-  
     def vykresli(self):
         img = self.hladaj_ciaru_alg1(self.path)
         cv2.imshow("window", img)
@@ -121,7 +121,7 @@ class HladanieCiary():
         directory = self.path
         for filename in os.listdir(directory):
             if filename.endswith("."+self.pripona):
-                print(filename)
+                #print(filename)
                 file_path = os.path.join(directory, filename)
                 try:
                     output_file = os.path.join(self.out_path, filename)
@@ -135,7 +135,7 @@ class HladanieCiary():
                     if self.zobraz:
                         cv2.imshow("window", img)
                         cv2.waitKey(0)
-                    else:
+                    elif output_file != "":
                         print(output_file)
                         cv2.imwrite(output_file, img)
                 except:
