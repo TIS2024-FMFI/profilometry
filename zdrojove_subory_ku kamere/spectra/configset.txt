@@ -1,0 +1,1 @@
+{"debug": 0, "camrgb": 10, "camspect": 0, "moveline": 154, "moveline2": 100, "moveline3": 100, "heightline": 1, "lang": "EN", "calnm1": 404.6565, "calnm2": 435.8335, "calnm3": 546.075, "calpx1": 177, "calpx2": 257, "calpx3": 517}
