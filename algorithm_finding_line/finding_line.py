@@ -10,11 +10,12 @@ class HladanieCiary():
     Pre aplikovanie na cely subor fotiek, treba nastavit path, kde sa fotky nachadzaju, a out_path, kde chceme fotky ulozit a je
     potrebne vytvorit tento subor.
     '''
-    def __init__(self,path,out_path = "",zobraz = False, pripona = 'jpg'):
+    def __init__(self,path ,out_path, konst,zobraz = False, pripona = 'jpg'):
         self.path = path
         self.out_path = out_path
         self.zobraz = zobraz
         self.pripona = pripona
+        self.konst = konst
         self.vsetky_body = []
     
     def hladaj_ciaru_alg1(self, path):
@@ -153,7 +154,7 @@ class HladanieCiary():
 
         for e, body in enumerate(self.vsetky_body):
             for point in body:
-                cv2.circle(combined_img, (point[0], e*10), radius=2, color=(0, 255, 0), thickness=-1)
+                cv2.circle(combined_img, (point[0], int(point[1]*e*0.01 * self.konst)), radius=2, color=(0, 255, 0), thickness=-1)
         
         cv2.imshow("All Points", combined_img)
         cv2.waitKey(0)
@@ -181,7 +182,9 @@ class HladanieCiary3D(HladanieCiary):
         
         plt.show()
 
-#h = HladanieCiary3D("images\\gombik", "images\\gombik_alg", zobraz=False, pripona='png')
+#h = HladanieCiary3D("images\\gombik", "images\\gombik_alg". 1, zobraz=False, pripona='png')
 #h.aplikuj_na_subor(1)
+
+#h.vykresli_vsetky_body()
 #h.vykresli_vsetky_3d2()
 #h.vykresli_vsetky_body_3d()
