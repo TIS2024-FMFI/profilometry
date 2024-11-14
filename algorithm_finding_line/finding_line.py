@@ -1,6 +1,8 @@
 import numpy as np
 import cv2
 import os
+import matplotlib.pyplot as plt
+
 
 class HladanieCiary():
     '''
@@ -13,6 +15,7 @@ class HladanieCiary():
         self.out_path = out_path
         self.zobraz = zobraz
         self.pripona = pripona
+        self.vsetky_body = []
     
     def hladaj_ciaru_alg1(self, path):
         img = cv2.imread(path)
@@ -46,7 +49,7 @@ class HladanieCiary():
         priem  =0
         objekt = []
         for i in najvacsie:
-            if abs(i[1]-prvy) < 20: #20
+            if abs(i[1]-prvy) < 30: #20
                 referencna.append(i)
                 priem+=i[1]
             else:
@@ -58,14 +61,16 @@ class HladanieCiary():
 
         cv2.line(new_img, (0, priem//len(referencna)), (img.shape[1],priem//len(referencna)), (200,120,100),3)
 
-        body = np.array(objekt, np.int32)
-        # print(body)
-        # cv2.polylines(new_img, [body], isClosed=False, color=(0, 0, 255), thickness=2)
-
-        #print(body)
         for i in objekt:
             cv2.circle(new_img, (i[0], i[1]), radius=2, color=(0, 0, 255), thickness=-1)
         
+        nove_body = []
+        for i in objekt:
+            pom_b = (i[0], i[1], i[1]-priem//len(referencna))
+            nove_body.append(pom_b)
+        
+        nove_body = np.array(nove_body, np.int32)
+        self.vsetky_body.append(nove_body)
         return new_img
   
     def hladaj_ciaru_alg2(self, path):
@@ -112,8 +117,8 @@ class HladanieCiary():
         
         return img
     
-    def vykresli(self):
-        img = self.hladaj_ciaru_alg1(self.path)
+    def vykresli(self, path):
+        img = self.hladaj_ciaru_alg1(path)
         cv2.imshow("window", img)
         cv2.waitKey(0)
     
@@ -140,10 +145,43 @@ class HladanieCiary():
                         cv2.imwrite(output_file, img)
                 except:
                     pass
+                
+        self.vykresli_vsetky_body()
 
+    def vykresli_vsetky_body(self):
+        combined_img = np.zeros((1080, 1920, 3), dtype=np.uint8)
 
-# h = HladanieCiary("images\\fisrt_scans\\340-145825.jpg", "finding_line\\with_lines_point2", zobraz=False)
-# h.aplikuj_na_subor(1)
+        for e, body in enumerate(self.vsetky_body):
+            for point in body:
+                cv2.circle(combined_img, (point[0], e*10), radius=2, color=(0, 255, 0), thickness=-1)
+        
+        cv2.imshow("All Points", combined_img)
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
 
-h = HladanieCiary("images\\gombik", "images\\gombik_alg", zobraz=False, pripona='png')
-h.aplikuj_na_subor(1)
+class HladanieCiary3D(HladanieCiary):
+    def vykresli_vsetky_body_3d(self):
+        x_vals = []
+        y_vals = []
+        z_vals = []
+        
+        for z_index, body in enumerate(self.vsetky_body):
+            if len(body) > 0:
+                x_vals.extend(body[:, 0])
+                y_vals.extend(body[:, 1])
+                z_vals.extend([z_index] * len(body))
+
+        x_vals = np.array(x_vals)
+        y_vals = np.array(y_vals)
+        z_vals = np.array(z_vals)
+
+        fig = plt.figure()
+        ax = fig.add_subplot(111, projection='3d')
+        ax.scatter(x_vals, y_vals, z_vals*0.5, c=z_vals, cmap='viridis', marker='o')
+        
+        plt.show()
+
+#h = HladanieCiary3D("images\\gombik", "images\\gombik_alg", zobraz=False, pripona='png')
+#h.aplikuj_na_subor(1)
+#h.vykresli_vsetky_3d2()
+#h.vykresli_vsetky_body_3d()
