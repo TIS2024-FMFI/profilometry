@@ -2,6 +2,10 @@ import numpy as np
 import cv2
 import os
 import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
+from scipy.spatial import Delaunay
+from stl import mesh
+from scipy import interpolate
 
 
 class HladanieCiary():
@@ -16,7 +20,9 @@ class HladanieCiary():
         self.zobraz = zobraz
         self.pripona = pripona
         self.konst = konst
+        self.posun_poc = 1
         self.vsetky_body = []
+                
     
     def hladaj_ciaru_alg1(self, path):
         img = cv2.imread(path)
@@ -30,7 +36,6 @@ class HladanieCiary():
 
         prvy = 0
 
-        cl = 0
         for col in range(width):
             column_pixels = img[:, col]
             if max(column_pixels) > 80: #150
@@ -38,8 +43,6 @@ class HladanieCiary():
                     prvy = np.argmax(column_pixels)
                 najvacsie.append((col, np.argmax(column_pixels)))
                 #print(np.argmax(column_pixels))
-            
-                cl+=1
 
         new_img = np.zeros((height, width, 3), dtype=np.uint8)
 
@@ -67,11 +70,12 @@ class HladanieCiary():
         
         nove_body = []
         for i in objekt:
-            pom_b = (i[0], i[1], i[1]-priem//len(referencna))
+            pom_b = (i[0], i[1] * self.posun_poc * self.konst, i[1]-priem//len(referencna))
             nove_body.append(pom_b)
         
         nove_body = np.array(nove_body, np.int32)
         self.vsetky_body.append(nove_body)
+        self.posun_poc+=1
         return new_img
   
     def hladaj_ciaru_alg2(self, path):
@@ -154,7 +158,7 @@ class HladanieCiary():
 
         for e, body in enumerate(self.vsetky_body):
             for point in body:
-                cv2.circle(combined_img, (point[0], int(point[1]*e*0.01 * self.konst)), radius=2, color=(0, 255, 0), thickness=-1)
+                cv2.circle(combined_img, (point[0], int(point[1]*0.01)), radius=2, color=(0, 255, 0), thickness=-1)
         
         cv2.imshow("All Points", combined_img)
         cv2.waitKey(0)
@@ -170,7 +174,7 @@ class HladanieCiary3D(HladanieCiary):
             if len(body) > 0:
                 x_vals.extend(body[:, 0])
                 y_vals.extend(body[:, 1])
-                z_vals.extend([z_index] * len(body))
+                z_vals.extend(body[:, 2])
 
         x_vals = np.array(x_vals)
         y_vals = np.array(y_vals)
@@ -178,13 +182,104 @@ class HladanieCiary3D(HladanieCiary):
 
         fig = plt.figure()
         ax = fig.add_subplot(111, projection='3d')
-        ax.scatter(x_vals, y_vals, z_vals*0.5, c=z_vals, cmap='viridis', marker='o')
+        ax.scatter(x_vals, y_vals, z_vals, c=z_vals, cmap='viridis', marker='o')
         
         plt.show()
 
-#h = HladanieCiary3D("images\\gombik", "images\\gombik_alg". 1, zobraz=False, pripona='png')
-#h.aplikuj_na_subor(1)
+    def filter_points_by_z(self,points, z_threshold=3.0):
+        """
+        Replaces points that are outliers along the z-axis with interpolated z-values based on neighbors.
+        
+        Parameters:
+            points (np.ndarray): Nx3 array of 3D points.
+            z_threshold (float): Threshold (in standard deviations) for outlier detection along z-axis.
+            
+        Returns:
+            np.ndarray: Array of points with outliers replaced by interpolated z-values.
+        """
+        # Compute the mean and standard deviation of the z-axis
+        z_mean = np.mean(points[:, 2])
+        z_std = np.std(points[:, 2])
 
+        # Define the z-value bounds based on threshold
+        z_min = z_mean - z_threshold * z_std
+        z_max = z_mean + z_threshold * z_std
+
+        # Identify outlier indices
+        outlier_indices = (points[:, 2] < z_min) | (points[:, 2] > z_max)
+        
+        # Interpolation: replace outliers with interpolated values
+        # First, extract the non-outlier points
+        valid_points = points[~outlier_indices]
+        
+        # If there are enough valid points, we can interpolate
+        if len(valid_points) > 1:
+            # Create an interpolation function for the z-values based on valid indices
+            interp_func = interpolate.interp1d(valid_points[:, 0], valid_points[:, 2], kind='linear', fill_value="extrapolate")
+            
+            # Apply the interpolation to the outliers along the x-axis (assuming linear interpolation on x)
+            points[outlier_indices, 2] = interp_func(points[outlier_indices, 0])
+        
+        return points
+
+    def vykresli_vsetky_body_3d_mesh(self):
+        x_vals = []
+        y_vals = []
+        z_vals = []
+        
+        for body in self.vsetky_body:
+            if len(body) > 0:
+                x_vals.extend(body[:, 0])
+                y_vals.extend(body[:, 1])
+                z_vals.extend(body[:, 2])
+
+        points = np.array([x_vals, y_vals, z_vals]).T
+        #points = self.filter_points_by_z(points)
+        tri = Delaunay(points[:, :2])
+
+        # Plot the mesh
+        fig = plt.figure()
+        ax = fig.add_subplot(111, projection='3d')
+
+        ax.plot_trisurf(points[:, 0], points[:, 1], points[:, 2], triangles=tri.simplices, cmap='viridis', edgecolor='none')
+        
+        ax.set_xlabel('X')
+        ax.set_ylabel('Y')
+        ax.set_zlabel('Z')
+        plt.title("3D Mesh from Detected Points")
+        plt.show()
+        
+        self.export_to_stl('exp.stl', points, tri)
+        
+        return points,tri
+    
+    def export_to_stl(self, filename, points, tri):
+        #points, tri = self.vykresli_vsetky_body_3d_mesh()
+        points = points.astype(np.float64)
+
+        points -= points.min(axis=0)
+        points /= points.max(axis=0)
+
+        scale_factor = 100
+        points *= scale_factor
+        
+        
+        faces = tri.simplices
+        stl_mesh = mesh.Mesh(np.zeros(faces.shape[0], dtype=mesh.Mesh.dtype))
+
+        for i, face in enumerate(faces):
+            for j in range(3):
+                stl_mesh.vectors[i][j] = points[face[j], :]
+
+        # Write the mesh to an STL file
+        stl_mesh.save(filename)
+        print(f"STL file saved as {filename}")
+        
+    
+h = HladanieCiary3D("images\\krizik", "images\\krizik_alg", 1, zobraz=False, pripona='png')
+h.aplikuj_na_subor(1)
+h.vykresli_vsetky_body_3d_mesh()
 #h.vykresli_vsetky_body()
 #h.vykresli_vsetky_3d2()
 #h.vykresli_vsetky_body_3d()
+#print(h.vsetky_body)
