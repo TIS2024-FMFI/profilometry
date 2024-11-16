@@ -1,4 +1,4 @@
-# scanner.py
+# scanner.py - Working in progress
 import cv2
 from threading import Thread
 import tkinter as tk
