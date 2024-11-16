@@ -1,4 +1,4 @@
-#main.py
+#main.py - Run this to start application
 import sys
 import os
 from frontend.main_window import MainWindow
