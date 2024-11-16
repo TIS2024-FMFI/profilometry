@@ -1,3 +1,4 @@
+#config.py
 # Konfigurácia okna
 WINDOW_CONFIG = {
     'title': 'LaserScan Pro',
