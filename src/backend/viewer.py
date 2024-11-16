@@ -7,9 +7,9 @@ from config import WINDOW_CONFIG
 import os
 
 class ViewerWindow:
-    def __init__(self):
+    def __init__(self, path):
         self.root = tk.Toplevel()
-        self.path = 'images/gombik'
+        self.path = path
         self.pripona = 'png'
         self.setup_window()
         self.pridaj_obrazky()
@@ -226,5 +226,5 @@ class ViewerWindow:
 def start_viewer():
     root = tk.Tk()
     root.withdraw()
-    ViewerWindow()
+    ViewerWindow('images/vrtulka')
     root.mainloop()
