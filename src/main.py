@@ -1,5 +1,7 @@
-import tkinter as tk
+import sys
+import os
 from frontend.main_window import MainWindow
+import tkinter as tk
 
 def main():
     root = tk.Tk()
