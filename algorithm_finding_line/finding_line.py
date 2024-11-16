@@ -14,26 +14,22 @@ class HladanieCiary():
     Pre aplikovanie na cely subor fotiek, treba nastavit path, kde sa fotky nachadzaju, a out_path, kde chceme fotky ulozit a je
     potrebne vytvorit tento subor.
     '''
-    def __init__(self,path ,out_path, konst,zobraz = False, pripona = 'jpg'):
+    def __init__(self,path ,out_path, konstanta,zobraz = False, pripona = 'jpg'):
         self.path = path
         self.out_path = out_path
         self.zobraz = zobraz
         self.pripona = pripona
-        self.konst = konst
+        self.konstanta = konstanta
         self.posun_poc = 1
         self.vsetky_body = []
-                
-    
-    def hladaj_ciaru_alg1(self, path):
-        img = cv2.imread(path)
-        img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-
+             
+    def hladaj_ciaru_alg1(self, img):
+        if isinstance(img, str):
+            img = cv2.imread(img)
+            img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        
         height, width = img.shape
-        #print(f"Výška: {height}, Šírka: {width}")
-
-
         najvacsie = []
-
         prvy = 0
 
         for col in range(width):
@@ -42,20 +38,16 @@ class HladanieCiary():
                 if prvy ==0:
                     prvy = np.argmax(column_pixels)
                 najvacsie.append((col, np.argmax(column_pixels)))
-                #print(np.argmax(column_pixels))
 
         new_img = np.zeros((height, width, 3), dtype=np.uint8)
 
-
-        #print(prvy)
-
         referencna = []
-        priem  =0
+        priemerReferencna = 0
         objekt = []
         for i in najvacsie:
             if abs(i[1]-prvy) < 30: #20
                 referencna.append(i)
-                priem+=i[1]
+                priemerReferencna+=i[1]
             else:
                 if (i[1] > prvy):
                     objekt.append(i)
@@ -63,21 +55,22 @@ class HladanieCiary():
         # points = np.array(najvacsie, dtype=np.int32)
         # cv2.polylines(new_img, [points], isClosed=False, color=(0, 0, 255), thickness=2)
 
-        cv2.line(new_img, (0, priem//len(referencna)), (img.shape[1],priem//len(referencna)), (200,120,100),3)
+        cv2.line(new_img, (0, priemerReferencna//len(referencna)), (img.shape[1],priemerReferencna//len(referencna)), (200,120,100),3)
 
         for i in objekt:
             cv2.circle(new_img, (i[0], i[1]), radius=2, color=(0, 0, 255), thickness=-1)
         
         nove_body = []
         for i in objekt:
-            pom_b = (i[0], i[1] * self.posun_poc * self.konst, i[1]-priem//len(referencna))
+            pom_b = (i[0], i[1] * self.posun_poc * self.konstanta, i[1]-priemerReferencna//len(referencna))
             nove_body.append(pom_b)
         
         nove_body = np.array(nove_body, np.int32)
         self.vsetky_body.append(nove_body)
         self.posun_poc+=1
         return new_img
-  
+    
+    
     def hladaj_ciaru_alg2(self, path):
         img = cv2.imread(path)
 
@@ -93,15 +86,10 @@ class HladanieCiary():
             if len(first_line) == 0:
                 first_line.append(line)
             else:
-                    # print("---------")
-                    # print(new_lines[0][0][1])
-                    # print(line[0][1])
-                    # print(abs(new_lines[0][0][1] - line[0][1]))
-                    # print("---------")
-                    if abs(line[0][1] - first_line[0][0][1]) > 10:
-                        second_line.append(line)
-                    else:
-                        first_line.append(line)
+                if abs(line[0][1] - first_line[0][0][1]) > 10:
+                    second_line.append(line)
+                else:
+                    first_line.append(line)
 
         if first_line[0][0][1] > second_line[0][0][1]:
             pom = first_line
@@ -131,7 +119,6 @@ class HladanieCiary():
         directory = self.path
         for filename in os.listdir(directory):
             if filename.endswith("."+self.pripona):
-                #print(filename)
                 file_path = os.path.join(directory, filename)
                 try:
                     output_file = os.path.join(self.out_path, filename)
@@ -156,7 +143,7 @@ class HladanieCiary():
     def vykresli_vsetky_body(self):
         combined_img = np.zeros((1080, 1920, 3), dtype=np.uint8)
 
-        for e, body in enumerate(self.vsetky_body):
+        for body in self.vsetky_body:
             for point in body:
                 cv2.circle(combined_img, (point[0], int(point[1]*0.01)), radius=2, color=(0, 255, 0), thickness=-1)
         
@@ -187,37 +174,18 @@ class HladanieCiary3D(HladanieCiary):
         plt.show()
 
     def filter_points_by_z(self,points, z_threshold=3.0):
-        """
-        Replaces points that are outliers along the z-axis with interpolated z-values based on neighbors.
-        
-        Parameters:
-            points (np.ndarray): Nx3 array of 3D points.
-            z_threshold (float): Threshold (in standard deviations) for outlier detection along z-axis.
-            
-        Returns:
-            np.ndarray: Array of points with outliers replaced by interpolated z-values.
-        """
-        # Compute the mean and standard deviation of the z-axis
         z_mean = np.mean(points[:, 2])
         z_std = np.std(points[:, 2])
 
-        # Define the z-value bounds based on threshold
         z_min = z_mean - z_threshold * z_std
         z_max = z_mean + z_threshold * z_std
 
-        # Identify outlier indices
         outlier_indices = (points[:, 2] < z_min) | (points[:, 2] > z_max)
-        
-        # Interpolation: replace outliers with interpolated values
-        # First, extract the non-outlier points
+
         valid_points = points[~outlier_indices]
         
-        # If there are enough valid points, we can interpolate
         if len(valid_points) > 1:
-            # Create an interpolation function for the z-values based on valid indices
             interp_func = interpolate.interp1d(valid_points[:, 0], valid_points[:, 2], kind='linear', fill_value="extrapolate")
-            
-            # Apply the interpolation to the outliers along the x-axis (assuming linear interpolation on x)
             points[outlier_indices, 2] = interp_func(points[outlier_indices, 0])
         
         return points
@@ -237,7 +205,6 @@ class HladanieCiary3D(HladanieCiary):
         #points = self.filter_points_by_z(points)
         tri = Delaunay(points[:, :2])
 
-        # Plot the mesh
         fig = plt.figure()
         ax = fig.add_subplot(111, projection='3d')
 
@@ -271,15 +238,10 @@ class HladanieCiary3D(HladanieCiary):
             for j in range(3):
                 stl_mesh.vectors[i][j] = points[face[j], :]
 
-        # Write the mesh to an STL file
         stl_mesh.save(filename)
         print(f"STL file saved as {filename}")
         
     
-h = HladanieCiary3D("images\\krizik", "images\\krizik_alg", 1, zobraz=False, pripona='png')
+h = HladanieCiary3D("images\\gombik", "images\\gombik_alg", 1, zobraz=False, pripona='png')
 h.aplikuj_na_subor(1)
 h.vykresli_vsetky_body_3d_mesh()
-#h.vykresli_vsetky_body()
-#h.vykresli_vsetky_3d2()
-#h.vykresli_vsetky_body_3d()
-#print(h.vsetky_body)
