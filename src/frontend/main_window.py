@@ -30,6 +30,10 @@ class MainWindow:
     def setup_window(self):
         """Setup basic window properties"""
         self.root.title(WINDOW_CONFIG['title'])
+
+        self.root.state('zoomed')
+        self.root.resizable(True, True)
+
         screen_width = self.root.winfo_screenwidth()
         screen_height = self.root.winfo_screenheight()
         

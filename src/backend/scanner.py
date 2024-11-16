@@ -3,6 +3,9 @@ import cv2
 from threading import Thread
 import tkinter as tk
 from tkinter import Menu, simpledialog
+from tkinter import *
+from tkinter import ttk, messagebox
+from PIL import Image, ImageTk
 
 
 class Scanner:
@@ -28,8 +31,28 @@ class Scanner:
         menubar.add_cascade(label="File", menu=file_menu)
         file_menu.add_command(label="Start Camera", command=self.start_camera_view)
         file_menu.add_command(label="Stop Camera", command=self.stop_stream)
+        file_menu.add_command(label="New Project", command=self.new_project)
+        file_menu.add_command(label="Open Project", command=self.open_project)
+        file_menu.add_command(label="Save Project", command=self.save_project)
+        export_menu = Menu(file_menu, tearoff=0)
+        file_menu.add_cascade(label="Export", menu=export_menu)
+        export_menu.add_command(label="STL", command=lambda: self.export_file("stl"))
+        export_menu.add_command(label="OBJ", command=lambda: self.export_file("obj"))
+        export_menu.add_command(label="GLTF", command=lambda: self.export_file("gltf"))
         file_menu.add_separator()
         file_menu.add_command(label="Exit", command=self.exit_application)
+
+        # Main Menu
+        main_menu = Menu(menubar, tearoff=0)
+        menubar.add_cascade(label="Main Menu", menu=main_menu)
+        main_menu.add_command(label="Scan Profile", command=self.scan_profile)
+        main_menu.add_command(label="Browse Scans", command=self.browse_scans)
+        # Capture Menu
+        capture_menu = Menu(menubar, tearoff=0)
+        menubar.add_cascade(label="Capture", menu=capture_menu)
+        capture_menu.add_command(label="Choose a Camera", command=self.choose_camera)
+        capture_menu.add_command(label="Camera Settings", command=self.open_camera_settings)  # Renamed method
+        capture_menu.add_command(label="Calibration", command=self.calibration)
 
     def start_camera_view(self):
         """Initialize the camera view."""
@@ -102,3 +125,15 @@ class Scanner:
         """Exit the application."""
         self.stop_stream()
         self.main_window.root.destroy()
+    def new_project(self): messagebox.showinfo("New Project", "Feature coming soon!")
+    def open_project(self): messagebox.showinfo("Open Project", "Feature coming soon!")
+    def save_project(self): messagebox.showinfo("Save Project", "Feature coming soon!")
+    def export_file(self, format): messagebox.showinfo("Export", f"Export as {format} coming soon!")
+    def scan_profile(self): messagebox.showinfo("Scan Profile", "Feature coming soon!")
+    def browse_scans(self): messagebox.showinfo("Browse Scans", "Feature coming soon!")
+    def calibration(self): messagebox.showinfo("Calibration", "Feature coming soon!")
+    def start_scan(self): messagebox.showinfo("Start Scan", "Feature coming soon!")
+    def stop_scan(self): messagebox.showinfo("Stop Scan", "Feature coming soon!")
+    def save_scan(self): messagebox.showinfo("Save Scan", "Feature coming soon!")
+    def choose_camera(self): messagebox.showinfo("Choose Camera", "Feature coming soon!")
+    def open_camera_settings(self): messagebox.showinfo("Camera Settings", "Feature coming soon!")

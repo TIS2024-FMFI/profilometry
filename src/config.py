@@ -2,8 +2,8 @@
 # Konfigurácia okna
 WINDOW_CONFIG = {
     'title': 'LaserScan Pro',
-    'width_ratio': 0.8,
-    'height_ratio': 0.8,
+    'width_ratio': 1,
+    'height_ratio': 1,
     'bg_color': '#F0F8FF'
 }
 
