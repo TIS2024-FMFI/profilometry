@@ -1,0 +1,14 @@
+Profilometer-TIS/
+│
+├── frontend/
+│   ├── __init__.py
+│   └── main_window.py         # Hlavné okno aplikácie
+│
+├── backend/
+│   ├── __init__.py
+│   ├── scanner.py             # Logika pre skenovanie
+│   ├── viewer.py              # Logika pre prezeranie skenov
+│   └── model_3d.py            # Logika pre zobrazovanie 3D modelu
+│
+├── config.py                  # Konfiguračné konštanty
+└── main.py                    # Hlavný spúšťací súbor
