@@ -6,6 +6,7 @@ import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from config import WINDOW_CONFIG
 from backend.scanner import Scanner
+from backend.viewer import ViewerWindow
 
 class MainWindow:
     def __init__(self, root):
@@ -156,8 +157,9 @@ class MainWindow:
         
     def handle_view(self):
         """Handle view button click"""
-        from backend.viewer import start_viewer
-        start_viewer()
+        self.clear_window()
+        viewer = ViewerWindow('images/gombik', self)
+
         
     def handle_3d(self):
         """Handle 3D view button click"""

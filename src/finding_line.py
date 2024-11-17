@@ -64,52 +64,18 @@ class HladanieCiary():
         self.posun_poc+=1
         return new_img
     
-    
-    def hladaj_ciaru_alg2(self, path):
-        img = cv2.imread(path)
-
-        img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-        edges = cv2.Canny(img, 100,200)
-
-        lines = cv2.HoughLinesP(edges,rho=1, theta = 1*np.pi/180, threshold =100, minLineLength=100, maxLineGap=50)
-
-        first_line = []
-        second_line = []
-
-        for line in lines:
-            if len(first_line) == 0:
-                first_line.append(line)
-            else:
-                if abs(line[0][1] - first_line[0][0][1]) > 10:
-                    second_line.append(line)
-                else:
-                    first_line.append(line)
-
-        if first_line[0][0][1] > second_line[0][0][1]:
-            pom = first_line
-            first_line = second_line
-            second_line = pom
-            
-
-        avg_f_l = 0
-        for i in first_line:
-            avg_f_l+=i[0][1]
-
-        avg_s_l = 0
-        for i in second_line:
-            avg_s_l+=i[0][1]
-
-        cv2.line(img, (0, avg_f_l//len(first_line)), (1500,avg_f_l//len(first_line)), (200,120,100),3)
-        cv2.line(img, (0, avg_s_l//len(second_line)), (1500,avg_s_l//len(second_line)), (200,120,100),3)
-        
-        return img
-    
     def vykresli(self, path):
         img = self.hladaj_ciaru_alg1(path)
         cv2.imshow("window", img)
         cv2.waitKey(0)
     
-    def aplikuj_na_subor(self, algoritmus):
+    def aplikuj_na_obrazok(self, obrazok):
+        pom_obr = obrazok.split('\\')
+        img = self.hladaj_ciaru_alg1(obrazok)
+        cv2.imwrite(pom_obr[0]+'_alg\\' + pom_obr[1], img)
+        
+    
+    def aplikuj_na_subor(self):
         directory = self.path
         for filename in os.listdir(directory):
             if filename.endswith("."+self.pripona):
@@ -117,17 +83,13 @@ class HladanieCiary():
                 try:
                     output_file = os.path.join(self.out_path, filename)
                     
-                    if algoritmus == 1:
-                        img = self.hladaj_ciaru_alg1(file_path)
-                        
-                    if algoritmus == 2:
-                        img = self.hladaj_ciaru_alg2(file_path)
+                    img = self.hladaj_ciaru_alg1(file_path)
                     
                     if self.zobraz:
                         cv2.imshow("window", img)
                         cv2.waitKey(0)
                     elif output_file != "":
-                        print(output_file)
+                        #print(output_file)
                         cv2.imwrite(output_file, img)
                 except:
                     pass
@@ -144,8 +106,3 @@ class HladanieCiary():
         cv2.imshow("All Points", combined_img)
         cv2.waitKey(0)
         cv2.destroyAllWindows()
-
-    
-#h = HladanieCiary3D("images\\gombik", "images\\gombik_alg", 1, zobraz=False, pripona='png')
-#h.aplikuj_na_subor(1)
-#h.vykresli_vsetky_body_3d_mesh()
