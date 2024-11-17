@@ -7,8 +7,8 @@ from config import WINDOW_CONFIG
 import os
 
 class ViewerWindow:
-    def __init__(self, path):
-        self.root = tk.Toplevel()
+    def __init__(self, path, root ):
+        self.root = root
         self.path = path
         self.pripona = 'png'
         self.setup_window()
@@ -16,8 +16,8 @@ class ViewerWindow:
         self.create_menu()
         
     def create_menu(self):
-        self.menubar = tk.Menu(self.root)
-        self.root.config(menu=self.menubar)
+        self.menubar = tk.Menu(self.root.root)
+        self.root.root.config(menu=self.menubar)
 
         file_menu = tk.Menu(self.menubar, tearoff=0)
         self.menubar.add_cascade(label="File", menu=file_menu)
@@ -51,14 +51,18 @@ class ViewerWindow:
         
     def setup_window(self):
         
-        lbl = tk.Label(self.root, text = "Zoznam scanov", font=('Arial 14'))
+        lbl = tk.Label(self.root.root, text = "Zoznam scanov", font=('Arial 14'))
         lbl.config(bg='white')
         lbl.place(x=200, y=150) 
         
         def vypni():
-            self.root.destroy()
+            for widget in self.root.root.winfo_children():
+                widget.destroy()
+                
+            from frontend.main_window import MainWindow
+            MainWindow(self.root.root)
         
-        button = tk.Button(self.root, text = "Back", font=('Arial 14'), command= vypni)
+        button = tk.Button(self.root.root, text = "Back", font=('Arial 14'), command= vypni)
         
         def on_enter(e):
             button.configure(bg='#2980b9')
@@ -71,12 +75,12 @@ class ViewerWindow:
         
         button.place(relx=.15, rely=.8)
         
-        self.root.state('zoomed')
-        self.root.configure(bg='white')
-        self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
+        self.root.root.state('zoomed')
+        self.root.root.configure(bg='white')
+        self.root.root.protocol("WM_DELETE_WINDOW", self.on_closing)
         
     def on_closing(self):
-        self.root.destroy()
+        self.root.root.destroy()
         
     
     def clear_images(self):
@@ -141,7 +145,7 @@ class ViewerWindow:
         
     
     def pridaj_obrazky(self):
-        self.scrollFrame = tk.Frame(self.root, height=400, width=500)
+        self.scrollFrame = tk.Frame(self.root.root, height=400, width=500)
 
         self.canvasScrollFrame = tk.Canvas(self.scrollFrame, height=400, width=500)
 
@@ -154,10 +158,10 @@ class ViewerWindow:
         self.scrollable_frame = tk.Frame(self.canvasScrollFrame)
         self.scrollable_frame.config(bg = 'white')
 
-        self.Scan1Prewlbl = tk.Label(self.root, text = "Scan1Preview", font=('Arial 14'))
+        self.Scan1Prewlbl = tk.Label(self.root.root, text = "Scan1Preview", font=('Arial 14'))
         self.Scan1Prewlbl.place(x=700, y=200) 
         
-        self.Scan2Prewlbl = tk.Label(self.root, text = "Scan1Adjusted", font=('Arial 14'))
+        self.Scan2Prewlbl = tk.Label(self.root.root, text = "Scan1Adjusted", font=('Arial 14'))
         self.Scan2Prewlbl.place(x=700, y=500) 
 
         self.canvasScrollFrame.create_window((0, 0), window=self.scrollable_frame, anchor="nw")
@@ -167,10 +171,10 @@ class ViewerWindow:
         
         self.scrollFrame.pack(side="left" ,padx=20, pady=0)   
 
-        self.image_labelPrew = tk.Label(self.root)
+        self.image_labelPrew = tk.Label(self.root.root)
         self.image_labelPrew.pack(padx=20, pady=40)
         
-        self.image_labelAlg = tk.Label(self.root)
+        self.image_labelAlg = tk.Label(self.root.root)
         self.image_labelAlg.pack(padx=20, pady=20) 
 
         self.pridaj_do_scrollbaru()
@@ -222,9 +226,9 @@ class ViewerWindow:
     def start_scan(self): messagebox.showinfo("Start Scan", "Feature coming soon!")
     def stop_scan(self): messagebox.showinfo("Stop Scan", "Feature coming soon!")
     def save_scan(self): messagebox.showinfo("Save Scan", "Feature coming soon!")          
+    
         
-def start_viewer():
-    root = tk.Tk()
-    root.withdraw()
-    ViewerWindow('images/vrtulka')
-    root.mainloop()
+    def start_viewer():
+        root = tk.Tk()
+        root.withdraw()
+        root.mainloop()
