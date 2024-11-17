@@ -114,7 +114,7 @@ class ViewerWindow:
             self.on_item_click(prvyObr)
     
     def on_item_click(self,photo):
-            print(f"Klikol si na obrazok: {photo}")
+            #print(f"Klikol si na obrazok: {photo}")
             cnt, photo = photo.split('|')
             
             rozd = photo.split('\\')

@@ -127,7 +127,7 @@ class HladanieCiary():
                         cv2.imshow("window", img)
                         cv2.waitKey(0)
                     elif output_file != "":
-                        print(output_file)
+                        #print(output_file)
                         cv2.imwrite(output_file, img)
                 except:
                     pass
