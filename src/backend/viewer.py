@@ -5,6 +5,7 @@ from PIL import Image, ImageTk
 from tkinter import messagebox
 from config import WINDOW_CONFIG
 import os
+import threading
 
 class ViewerWindow:
     def __init__(self, path, root ):
@@ -12,9 +13,26 @@ class ViewerWindow:
         self.path = path
         self.pripona = 'png'
         self.setup_window()
-        self.pridaj_obrazky()
         self.create_menu()
+        if not self.check_treba_generovat():
+            self.pridaj_obrazky()
+        else:
+            self.use_algorithm(batch=False)
+            
+    
+    def check_treba_generovat(self):
+        files = [f for f in os.listdir(self.path) if os.path.isfile(os.path.join(self.path, f))]
+        try:
+            files_alg = [f for f in os.listdir(self.path + "_alg") if os.path.isfile(os.path.join(self.path + "_alg", f))]
+        except:
+            files_alg = []
+            
+        if len(files_alg)>0 and len(files) == len(files_alg):
+            return False
         
+        return True  
+    
+    
     def create_menu(self):
         self.menubar = tk.Menu(self.root.root)
         self.root.root.config(menu=self.menubar)
@@ -84,11 +102,10 @@ class ViewerWindow:
         
     
     def clear_images(self):
-    # This method will clear the content of the scrollable_frame before adding new content
         for widget in self.scrollable_frame.winfo_children():
             widget.destroy()
     
-    def pridaj_do_scrollbaru(self):
+    def pridaj_do_scrollbaru(self):  
         prvyObr = None
         
         cnt = 0
@@ -118,7 +135,6 @@ class ViewerWindow:
             self.on_item_click(prvyObr)
     
     def on_item_click(self,photo):
-            #print(f"Klikol si na obrazok: {photo}")
             cnt, photo = photo.split('|')
             
             rozd = photo.split('\\')
@@ -149,11 +165,11 @@ class ViewerWindow:
 
         self.canvasScrollFrame = tk.Canvas(self.scrollFrame, height=400, width=500)
 
-        scrollbar = tk.Scrollbar(self.scrollFrame, orient="vertical", command=self.canvasScrollFrame.yview)
-        self.canvasScrollFrame.config(yscrollcommand=scrollbar.set)
+        self.scrollbar = tk.Scrollbar(self.scrollFrame, orient="vertical", command=self.canvasScrollFrame.yview)
+        self.canvasScrollFrame.config(yscrollcommand=self.scrollbar.set)
         self.canvasScrollFrame.config(bg='white')
         self.scrollFrame.config(bg = 'white')
-        scrollbar.config(bg = 'white')
+        self.scrollbar.config(bg = 'white')
         
         self.scrollable_frame = tk.Frame(self.canvasScrollFrame)
         self.scrollable_frame.config(bg = 'white')
@@ -166,7 +182,7 @@ class ViewerWindow:
 
         self.canvasScrollFrame.create_window((0, 0), window=self.scrollable_frame, anchor="nw")
 
-        scrollbar.pack(side="right", fill="y")
+        self.scrollbar.pack(side="right", fill="y")
         self.canvasScrollFrame.pack(side="left", fill="both", expand=True)
         
         self.scrollFrame.pack(side="left" ,padx=20, pady=0)   
@@ -182,42 +198,98 @@ class ViewerWindow:
         def on_frame_configure(event):
             self.canvasScrollFrame.config(scrollregion=self.canvasScrollFrame.bbox("all"))
 
-        self.scrollFrame.bind("<Configure>", on_frame_configure)
+        self.scrollable_frame.bind("<Configure>", on_frame_configure)
     
-    def new_project(self): messagebox.showinfo("New Project", "Feature coming soon!")
-    
-    def use_algorithm(self):
+    def use_algorithm(self, batch = True):
         from finding_line import HladanieCiary
         os.makedirs(self.path+'_alg', exist_ok=True)
         h = HladanieCiary(self.path, self.path+'_alg',1 ,pripona=self.pripona)
-        h.aplikuj_na_subor(1)
-        
+        if batch:
+            h.aplikuj_na_subor()
+            
+        else:
+            files = [f for f in os.listdir(self.path) if os.path.isfile(os.path.join(self.path, f))]
+            
+            progress_window = tk.Toplevel(self.root.root)
+            progress_window.title("Spracovanie obrázkov")
+            progress_window.geometry("400x150")
+            tk.Label(progress_window, text="Spracovávam obrázky, prosím čakajte...", font=("Arial", 12)).pack(pady=10)
+
+            progress_var = tk.DoubleVar()
+            progress_bar = ttk.Progressbar(progress_window, maximum=len(files), variable=progress_var)
+            progress_bar.pack(padx=20, pady=20, fill="x")
+            
+            def spracuj_obrazok():
+                for i, image_file in enumerate(files):
+                    output_file = os.path.join(self.path, image_file)
+                    try:
+                        h.aplikuj_na_obrazok(output_file)
+                    except Exception as e:
+                        print(f"Chyba pri spracovaní {image_file}: {e}")
+                        continue
+
+                    progress_var.set(i + 1)
+                    progress_window.update_idletasks()
+            
+                progress_window.destroy()  
+                #self.pridaj_obrazky()
+                
+            thread = threading.Thread(target=spracuj_obrazok)
+            thread.start()
+            
+            def check_thread():
+                if thread.is_alive():
+                    self.root.root.after(100, check_thread)
+                else:
+                    self.pridaj_obrazky()
+
+            check_thread()
     
     def open_project(self): 
         folder_path = filedialog.askdirectory(title="Vyberte priečinok")
         folder_path_alg = folder_path + '_alg'
         
         files = [f for f in os.listdir(folder_path) if os.path.isfile(os.path.join(folder_path, f))]
-    
+        
+        try:
+            if not os.path.exists(folder_path_alg):
+                files_alg = [f for f in os.listdir(folder_path_alg) if os.path.isfile(os.path.join(folder_path_alg, f))]
+        except:
+            files_alg = []
+        
         if files:
             first_file = files[0]
             koncovka = first_file.split('.')[-1]
         
         self.pripona = koncovka
         
-        if not os.path.exists(folder_path_alg):
+        chyba = False
+        if not os.path.exists(folder_path_alg) and len(files) != len(files_alg):
             os.makedirs(folder_path_alg, exist_ok=True)
             from finding_line import HladanieCiary
             h = HladanieCiary(folder_path, folder_path_alg,1 ,pripona=koncovka)
-            h.aplikuj_na_subor(1)
             
-        self.path = folder_path
-        self.clear_images()
-
-        self.pridaj_do_scrollbaru()
-
+            h.aplikuj_na_subor()
+            
+            
+            
+            
+            files_alg = [f for f in os.listdir(folder_path_alg) if os.path.isfile(os.path.join(folder_path_alg, f))]
+            
+            if len(files) != len(files_alg):
+                chyba = True
         
+        if not chyba:            
+            self.path = folder_path
+            self.clear_images()
+
+            self.pridaj_do_scrollbaru()
+
+        else:
+            messagebox.showerror("Zle spracovanie", "Pri spracovani nastala chyba, fotky nemozu byt zobrazene")
         
+       
+    def new_project(self): messagebox.showinfo("New Project", "Feature coming soon!") 
     def save_project(self): messagebox.showinfo("Save Project", "Feature coming soon!")
     def export_file(self, format): messagebox.showinfo("Export", f"Export as {format} coming soon!")
     def scan_profile(self): messagebox.showinfo("Scan Profile", "Feature coming soon!")
@@ -225,10 +297,4 @@ class ViewerWindow:
     def calibration(self): messagebox.showinfo("Calibration", "Feature coming soon!")
     def start_scan(self): messagebox.showinfo("Start Scan", "Feature coming soon!")
     def stop_scan(self): messagebox.showinfo("Stop Scan", "Feature coming soon!")
-    def save_scan(self): messagebox.showinfo("Save Scan", "Feature coming soon!")          
-    
-        
-    def start_viewer():
-        root = tk.Tk()
-        root.withdraw()
-        root.mainloop()
+    def save_scan(self): messagebox.showinfo("Save Scan", "Feature coming soon!")
