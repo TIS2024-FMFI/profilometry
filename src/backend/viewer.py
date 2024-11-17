@@ -269,10 +269,7 @@ class ViewerWindow:
             from finding_line import HladanieCiary
             h = HladanieCiary(folder_path, folder_path_alg,1 ,pripona=koncovka)
             
-            h.aplikuj_na_subor()
-            
-            
-            
+            h.aplikuj_na_subor()    
             
             files_alg = [f for f in os.listdir(folder_path_alg) if os.path.isfile(os.path.join(folder_path_alg, f))]
             
