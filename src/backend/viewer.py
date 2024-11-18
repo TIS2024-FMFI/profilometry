@@ -218,13 +218,13 @@ class ViewerWindow:
 
     # Apply the algorithm to images
     def use_algorithm(self, batch=True):
-        from finding_line import HladanieCiary
+        from finding_line import LineDetection
         os.makedirs(self.path + '_alg', exist_ok=True)  # Create directory for processed files
-        processor = HladanieCiary(self.path, self.path + '_alg', 1, pripona=self.pripona)
+        processor = LineDetection(self.path, self.path + '_alg', 1, extension=self.pripona)
 
         if batch:
             # Apply the algorithm to all files in the folder
-            processor.aplikuj_na_subor()
+            processor.apply_to_folder()
         else:
             files = [f for f in os.listdir(self.path) if os.path.isfile(os.path.join(self.path, f))]
 
@@ -244,7 +244,7 @@ class ViewerWindow:
                 for i, image_file in enumerate(files):
                     output_file = os.path.join(self.path, image_file)
                     try:
-                        processor.aplikuj_na_obrazok(output_file)
+                        processor.apply_to_image(output_file)
                     except Exception as e:
                         print(f"Error processing {image_file}: {e}")
                         continue
@@ -292,9 +292,9 @@ class ViewerWindow:
         error = False
         if not os.path.exists(folder_path_alg) and len(files) != len(files_alg):
             os.makedirs(folder_path_alg, exist_ok=True)
-            from finding_line import HladanieCiary
-            processor = HladanieCiary(folder_path, folder_path_alg, 1, pripona=extension)
-            processor.aplikuj_na_subor()
+            from finding_line import LineDetection
+            processor = LineDetection(folder_path, folder_path_alg, 1, extension=extension)
+            processor.apply_to_folder()
 
             files_alg = [f for f in os.listdir(folder_path_alg) if os.path.isfile(os.path.join(folder_path_alg, f))]
             if len(files) != len(files_alg):
