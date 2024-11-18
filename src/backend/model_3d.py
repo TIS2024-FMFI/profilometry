@@ -1,3 +1,3 @@
-#We need to code this
+# We need to code this
 def start_3d_view():
-    print("3D zobrazenie spustené")
+    print("3D view started")
