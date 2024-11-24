@@ -81,6 +81,7 @@ class LineDetection:
 
     def apply_to_folder(self):
         # Apply the algorithm to all images in the folder
+        self.all_points = []
         for filename in os.listdir(self.path):
             if filename.endswith("." + self.extension):
                 file_path = os.path.join(self.path, filename)
@@ -105,7 +106,7 @@ class LineDetection:
 
         for points in self.all_points:
             for point in points:
-                cv2.circle(combined_img, (point[0], int(point[1] * 0.01)), 
+                cv2.circle(combined_img, (point[0] - 400, int(point[1] * 0.01 + 400)), 
                            radius=2, color=(0, 255, 0), thickness=-1)
         
         cv2.imshow("All Points", combined_img)

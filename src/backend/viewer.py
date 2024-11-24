@@ -6,16 +6,20 @@ from tkinter import messagebox
 from config import WINDOW_CONFIG
 import os
 import threading
+from finding_line import LineDetection
 
 class ViewerWindow:
     def __init__(self, path, root ):
         self.root = root
         self.path = path
+        self.all_points_to_img = []
+        self.images_to_delete = []
         self.pripona = 'png'  # File extension (e.g., png, jpg)
-        self.setup_window()  # Initialize the main window layout
-        self.create_menu()  # Create the menu bar
+
         if not self.check_needs_generation():  # Check if files need to be processed
             self.add_images()  # Add existing images
+            self.setup_window()  # Initialize the main window layout
+            self.create_menu()  # Create the menu bar
         else:
             self.use_algorithm(batch=False)  # Run the algorithm if needed
 
@@ -71,6 +75,17 @@ class ViewerWindow:
         # Disable unavailable capture options
         capture_menu.entryconfig("Calibration", state="disabled")
 
+    def delete_scans(self, num_from, num_to):
+        self.all_points_to_img = []
+        for i in range(num_from-1, num_to):
+            image_path, images_path_alg = self.scrollbar_images[i]
+            os.remove(image_path)
+            os.remove(images_path_alg)
+        
+        self.clear_images()
+        self.add_to_scrollbar()
+
+    
     # Set up the main window
     def setup_window(self):
         lbl = tk.Label(self.root.root, text="Scan List", font=('Arial 14')) 
@@ -84,8 +99,64 @@ class ViewerWindow:
 
             from frontend.main_window import MainWindow
             MainWindow(self.root.root)
+            
+        def show2d():
+            from finding_line import LineDetection
+            ld = LineDetection(self.path , self.path + '_alg', constant=1, extension= self.pripona)
+            if len(self.all_points_to_img) > 1:
+                ld.all_points = self.all_points_to_img
+            else:
+                ld.apply_to_folder()
+            
+            ld.display_all_points()
+
+        
+        def show_input_box():
+            if len(self.images_to_delete) == 0:
+                input_window = tk.Toplevel(self.root.root)
+                input_window.title("Enter Two Numbers")
+                input_window.geometry("300x150")
+                
+                tk.Label(input_window, text="Enter first number:").pack(pady=5)
+                first_number_entry = tk.Entry(input_window)
+                first_number_entry.pack(pady=5)
+                
+                tk.Label(input_window, text="Enter second number:").pack(pady=5)
+                second_number_entry = tk.Entry(input_window)
+                second_number_entry.pack(pady=5)
+                
+                tk.Button(input_window, text="Submit", command=process_numbers).pack(pady=10)
+                
+            else:
+                for i in self.images_to_delete:
+                    print(self.scrollbar_images[int(i)-1])
+                    os.remove(self.scrollbar_images[int(i)-1][0])
+                    os.remove(self.scrollbar_images[int(i)-1][1])
+                
+                self.clear_images()
+                self.add_to_scrollbar()
+                self.images_to_delete = []
+            
+            def process_numbers():
+                try:
+                    num1 = int(first_number_entry.get())
+                    num2 = int(second_number_entry.get())
+                    if num1> num2 or num1<=0 or num2<=0 or num1> len(self.scrollbar_images) or num2 > len(self.scrollbar_images):
+                        raise ValueError()
+                    ans = messagebox.askyesno("Numbers Entered", f"Do you want to delete images from {num1} to  {num2}?")
+                    if ans:
+                        self.delete_scans(num1, num2)
+                        
+                    input_window.destroy()
+                except ValueError:
+                    messagebox.showerror("Invalid Input", "Please enter valid numbers!")
+            
 
         button = tk.Button(self.root.root, text="Back", font=('Arial 14'), command=go_back)
+        
+        button2 = tk.Button(self.root.root, text="Show2D", font=('Arial 14'), command=show2d)
+        
+        button3 = tk.Button(self.root.root, text="Delete", font=('Arial 14'), command=show_input_box)
 
         # Highlight button on hover
         def on_enter(e):
@@ -93,11 +164,31 @@ class ViewerWindow:
 
         def on_leave(e):
             button.configure(bg=WINDOW_CONFIG['bg_color'])
+            
+        def on_enter2(e):
+            button2.configure(bg='#2980b9')
+
+        def on_leave2(e):
+            button2.configure(bg=WINDOW_CONFIG['bg_color'])    
+        
+        def on_enter3(e):
+            button3.configure(bg='#2980b9')
+
+        def on_leave3(e):
+            button3.configure(bg=WINDOW_CONFIG['bg_color'])
 
         button.bind('<Enter>', on_enter)
         button.bind('<Leave>', on_leave)
         
+        button2.bind('<Enter>', on_enter2)
+        button2.bind('<Leave>', on_leave2)
+        
+        button3.bind('<Enter>', on_enter3)
+        button3.bind('<Leave>', on_leave3)
+        
         button.place(relx=.15, rely=.8)
+        button2.place(relx=.25, rely=.8)
+        button3.place(relx = .4, rely = .8)
 
         self.root.root.state('zoomed')  # Maximize the window
         self.root.root.configure(bg='white')
@@ -116,6 +207,7 @@ class ViewerWindow:
     def add_to_scrollbar(self):
         first_image = None
         count = 0
+        self.scrollbar_images = []
 
         for filename in os.listdir(self.path):
             if filename.endswith("." + self.pripona):  # Check for correct file extension
@@ -123,23 +215,43 @@ class ViewerWindow:
                 if first_image is None:
                     first_image = str(count + 1) + "|" + file_path  # Store first image for preview
 
-                label = tk.Label(self.scrollable_frame, text=str(count + 1) + '. ' + file_path, font=("Arial 14"))
+                label = tk.Label(self.scrollable_frame, text=str(count + 1) + '. SCAN', font=("Arial 14"))
+                
+
+                split_path = file_path.split('\\')
+                split_path[0] += '_alg\\'
+                processed_image_path = split_path[0] + split_path[1]
+                
+                self.scrollbar_images.append((file_path, processed_image_path))
+                
                 label.pack(padx=10, pady=10)
                 label.config(bg="white")
                 count += 1
 
                 # Highlight label on hover
                 def on_hover_enter(event, label):
-                    label.config(bg="lightblue")
+                    if label['bg'] != 'red':
+                        label.config(bg="lightblue")
 
                 def on_hover_leave(event, label):
-                    label.config(bg="white")
+                    if label['bg'] != 'red':
+                        label.config(bg="white")
+                    
+                def on_right_click(event, label):
+                    if label['bg'] == 'red':
+                        label.config(bg='white')
+                        self.images_to_delete.remove(label['text'].split('.')[0])
+                    else:
+                        label.config(bg="red")
+                        self.images_to_delete.append(label['text'].split('.')[0])
+                    
 
                 label.bind("<Enter>", lambda event, label=label: on_hover_enter(event, label))
                 label.bind("<Leave>", lambda event, label=label: on_hover_leave(event, label))
 
                 # Set up click event for each label
                 label.bind("<Button-1>", lambda event, name=str(count) + '|' + file_path: self.on_item_click(name))
+                label.bind("<Button-3>", lambda event, label=label: on_right_click(event, label))
 
         if first_image:
             self.on_item_click(first_image)
@@ -221,10 +333,12 @@ class ViewerWindow:
         from finding_line import LineDetection
         os.makedirs(self.path + '_alg', exist_ok=True)  # Create directory for processed files
         processor = LineDetection(self.path, self.path + '_alg', 1, extension=self.pripona)
-
+        self.images_to_delete = []
+        
         if batch:
             # Apply the algorithm to all files in the folder
             processor.apply_to_folder()
+            self.all_points_to_img = processor.all_points
         else:
             files = [f for f in os.listdir(self.path) if os.path.isfile(os.path.join(self.path, f))]
 
@@ -248,11 +362,12 @@ class ViewerWindow:
                     except Exception as e:
                         print(f"Error processing {image_file}: {e}")
                         continue
-
+                
                     # Update progress bar
                     progress_var.set(i + 1)
                     progress_window.update_idletasks()
 
+                self.all_points_to_img = processor.all_points
                 progress_window.destroy()
 
             # Start the processing in a new thread
@@ -264,6 +379,8 @@ class ViewerWindow:
                 if thread.is_alive():
                     self.root.root.after(100, check_thread)
                 else:
+                    self.setup_window()  # Initialize the main window layout
+                    self.create_menu()  # Create the menu bar
                     self.add_images()
 
             check_thread()
@@ -287,7 +404,8 @@ class ViewerWindow:
             extension = first_file.split('.')[-1]
 
         self.pripona = extension
-
+        self.all_points_to_img = []
+        self.images_to_delete = []
         # Process files if necessary
         error = False
         if not os.path.exists(folder_path_alg) and len(files) != len(files_alg):
@@ -295,6 +413,7 @@ class ViewerWindow:
             from finding_line import LineDetection
             processor = LineDetection(folder_path, folder_path_alg, 1, extension=extension)
             processor.apply_to_folder()
+            self.all_points_to_img = processor.all_points
 
             files_alg = [f for f in os.listdir(folder_path_alg) if os.path.isfile(os.path.join(folder_path_alg, f))]
             if len(files) != len(files_alg):
