@@ -13,6 +13,7 @@ class ViewerWindow:
         self.root = root
         self.path = path
         self.all_points_to_img = []
+        self.images_to_delete = []
         self.pripona = 'png'  # File extension (e.g., png, jpg)
 
         if not self.check_needs_generation():  # Check if files need to be processed
@@ -111,17 +112,30 @@ class ViewerWindow:
 
         
         def show_input_box():
-            input_window = tk.Toplevel(self.root.root)
-            input_window.title("Enter Two Numbers")
-            input_window.geometry("300x150")
-            
-            tk.Label(input_window, text="Enter first number:").pack(pady=5)
-            first_number_entry = tk.Entry(input_window)
-            first_number_entry.pack(pady=5)
-            
-            tk.Label(input_window, text="Enter second number:").pack(pady=5)
-            second_number_entry = tk.Entry(input_window)
-            second_number_entry.pack(pady=5)
+            if len(self.images_to_delete) == 0:
+                input_window = tk.Toplevel(self.root.root)
+                input_window.title("Enter Two Numbers")
+                input_window.geometry("300x150")
+                
+                tk.Label(input_window, text="Enter first number:").pack(pady=5)
+                first_number_entry = tk.Entry(input_window)
+                first_number_entry.pack(pady=5)
+                
+                tk.Label(input_window, text="Enter second number:").pack(pady=5)
+                second_number_entry = tk.Entry(input_window)
+                second_number_entry.pack(pady=5)
+                
+                tk.Button(input_window, text="Submit", command=process_numbers).pack(pady=10)
+                
+            else:
+                for i in self.images_to_delete:
+                    print(self.scrollbar_images[int(i)-1])
+                    os.remove(self.scrollbar_images[int(i)-1][0])
+                    os.remove(self.scrollbar_images[int(i)-1][1])
+                
+                self.clear_images()
+                self.add_to_scrollbar()
+                self.images_to_delete = []
             
             def process_numbers():
                 try:
@@ -137,7 +151,6 @@ class ViewerWindow:
                 except ValueError:
                     messagebox.showerror("Invalid Input", "Please enter valid numbers!")
             
-            tk.Button(input_window, text="Submit", command=process_numbers).pack(pady=10)
 
         button = tk.Button(self.root.root, text="Back", font=('Arial 14'), command=go_back)
         
@@ -217,16 +230,28 @@ class ViewerWindow:
 
                 # Highlight label on hover
                 def on_hover_enter(event, label):
-                    label.config(bg="lightblue")
+                    if label['bg'] != 'red':
+                        label.config(bg="lightblue")
 
                 def on_hover_leave(event, label):
-                    label.config(bg="white")
+                    if label['bg'] != 'red':
+                        label.config(bg="white")
+                    
+                def on_right_click(event, label):
+                    if label['bg'] == 'red':
+                        label.config(bg='white')
+                        self.images_to_delete.remove(label['text'].split('.')[0])
+                    else:
+                        label.config(bg="red")
+                        self.images_to_delete.append(label['text'].split('.')[0])
+                    
 
                 label.bind("<Enter>", lambda event, label=label: on_hover_enter(event, label))
                 label.bind("<Leave>", lambda event, label=label: on_hover_leave(event, label))
 
                 # Set up click event for each label
                 label.bind("<Button-1>", lambda event, name=str(count) + '|' + file_path: self.on_item_click(name))
+                label.bind("<Button-3>", lambda event, label=label: on_right_click(event, label))
 
         if first_image:
             self.on_item_click(first_image)
@@ -308,7 +333,8 @@ class ViewerWindow:
         from finding_line import LineDetection
         os.makedirs(self.path + '_alg', exist_ok=True)  # Create directory for processed files
         processor = LineDetection(self.path, self.path + '_alg', 1, extension=self.pripona)
-
+        self.images_to_delete = []
+        
         if batch:
             # Apply the algorithm to all files in the folder
             processor.apply_to_folder()
@@ -379,6 +405,7 @@ class ViewerWindow:
 
         self.pripona = extension
         self.all_points_to_img = []
+        self.images_to_delete = []
         # Process files if necessary
         error = False
         if not os.path.exists(folder_path_alg) and len(files) != len(files_alg):
