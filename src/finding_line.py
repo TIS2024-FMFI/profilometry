@@ -106,7 +106,7 @@ class LineDetection:
 
         for points in self.all_points:
             for point in points:
-                cv2.circle(combined_img, (point[0], int(point[1] * 0.01)), 
+                cv2.circle(combined_img, (point[0] - 400, int(point[1] * 0.01 + 400)), 
                            radius=2, color=(0, 255, 0), thickness=-1)
         
         cv2.imshow("All Points", combined_img)

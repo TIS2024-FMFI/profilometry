@@ -14,10 +14,11 @@ class ViewerWindow:
         self.path = path
         self.all_points_to_img = []
         self.pripona = 'png'  # File extension (e.g., png, jpg)
-        self.setup_window()  # Initialize the main window layout
-        self.create_menu()  # Create the menu bar
+
         if not self.check_needs_generation():  # Check if files need to be processed
             self.add_images()  # Add existing images
+            self.setup_window()  # Initialize the main window layout
+            self.create_menu()  # Create the menu bar
         else:
             self.use_algorithm(batch=False)  # Run the algorithm if needed
 
@@ -352,6 +353,8 @@ class ViewerWindow:
                 if thread.is_alive():
                     self.root.root.after(100, check_thread)
                 else:
+                    self.setup_window()  # Initialize the main window layout
+                    self.create_menu()  # Create the menu bar
                     self.add_images()
 
             check_thread()
