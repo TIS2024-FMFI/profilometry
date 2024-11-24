@@ -81,6 +81,7 @@ class LineDetection:
 
     def apply_to_folder(self):
         # Apply the algorithm to all images in the folder
+        self.all_points = []
         for filename in os.listdir(self.path):
             if filename.endswith("." + self.extension):
                 file_path = os.path.join(self.path, filename)
