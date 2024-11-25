@@ -6,7 +6,6 @@ from tkinter import messagebox
 from config import WINDOW_CONFIG
 import os
 import threading
-from finding_line import LineDetection
 
 class ViewerWindow:
     def __init__(self, path, root ):
@@ -21,7 +20,7 @@ class ViewerWindow:
             self.setup_window()  # Initialize the main window layout
             self.create_menu()  # Create the menu bar
         else:
-            self.use_algorithm(batch=False)  # Run the algorithm if needed
+            self.use_algorithm_image_by_image()  # Run the algorithm if needed
 
     # Check if the algorithm needs to generate processed files
     def check_needs_generation(self):
@@ -47,7 +46,7 @@ class ViewerWindow:
         self.menubar.add_cascade(label="File", menu=file_menu)
         file_menu.add_command(label="New Project", command=self.new_project)
         file_menu.add_command(label="Open Project", command=self.open_project)
-        file_menu.add_command(label="Use Algorithm", command=self.use_algorithm)
+        file_menu.add_command(label="Use Algorithm", command=self.use_algorithm_to_images)
         file_menu.add_command(label="Save Project", command=self.save_project)
         export_menu = tk.Menu(file_menu, tearoff=0)
         file_menu.add_cascade(label="Export", menu=export_menu)
@@ -57,23 +56,48 @@ class ViewerWindow:
         file_menu.add_separator()
         file_menu.add_command(label="Exit", command=self.on_closing)
 
-        # Disable unavailable menu options
-        file_menu.entryconfig("New Project", state="disabled")
-        file_menu.entryconfig("Save Project", state="disabled")
-
         # Main menu
         main_menu = tk.Menu(self.menubar, tearoff=0)
         self.menubar.add_cascade(label="Main Menu", menu=main_menu)
         main_menu.add_command(label="Scan Profile", command=self.scan_profile)
-        main_menu.add_command(label="Browse Scans", command=self.browse_scans)
+        main_menu.add_command(label= "Show 3D", command = self.show_3d)
 
-        # Capture menu
-        capture_menu = tk.Menu(self.menubar, tearoff=0)
-        self.menubar.add_cascade(label="Capture", menu=capture_menu)
-        capture_menu.add_command(label="Calibration", command=self.calibration)
+    def use_algorithm_to_images(self):
+        top = tk.Toplevel(self.root.root)
+        top.title("Výber čísla")
+        top.geometry("300x200")
+
+        def close_window(top):
+            significant_threshold_pixel = int(significant_threshold_pixel_spinbox.get())
+            largest_points_threshold = int(largest_points_threshold_spinbox.get())
+            top.destroy()    
+            self.use_algorithm_image_by_image(significant_threshold_pixel = significant_threshold_pixel, 
+                                              largest_points_threshold = largest_points_threshold)
+
+        # Spinbox
         
-        # Disable unavailable capture options
-        capture_menu.entryconfig("Calibration", state="disabled")
+        frame1 = tk.Frame(top)
+        frame1.pack(pady=10)
+
+        label1 = tk.Label(frame1, text="Significant threshold pixel:")
+        label1.pack(side=tk.LEFT, padx=5)
+
+        significant_threshold_pixel_spinbox = tk.Spinbox(frame1, from_=0, to=100, width=10, textvariable=tk.StringVar(value="80"))
+        significant_threshold_pixel_spinbox.pack(side=tk.LEFT)
+        
+        
+        frame2 = tk.Frame(top)
+        frame2.pack(pady=10)
+        
+        label2 = tk.Label(frame2, text="Largest points threshold:")
+        label2.pack(side=tk.LEFT, padx=5)
+        
+        largest_points_threshold_spinbox = tk.Spinbox(frame2, from_=0, to=100, width=10, textvariable=tk.StringVar(value="30"))
+        largest_points_threshold_spinbox.pack(side=tk.LEFT)
+
+        close_button = tk.Button(top, text="Apply", command=lambda: close_window(top))
+        close_button.pack(pady=10)
+        
 
     def delete_scans(self, num_from, num_to):
         self.all_points_to_img = []
@@ -109,33 +133,20 @@ class ViewerWindow:
                 ld.apply_to_folder()
             
             ld.display_all_points()
-
         
-        def show_input_box():
-            if len(self.images_to_delete) == 0:
-                input_window = tk.Toplevel(self.root.root)
-                input_window.title("Enter Two Numbers")
-                input_window.geometry("300x150")
-                
-                tk.Label(input_window, text="Enter first number:").pack(pady=5)
-                first_number_entry = tk.Entry(input_window)
-                first_number_entry.pack(pady=5)
-                
-                tk.Label(input_window, text="Enter second number:").pack(pady=5)
-                second_number_entry = tk.Entry(input_window)
-                second_number_entry.pack(pady=5)
-                
-                tk.Button(input_window, text="Submit", command=process_numbers).pack(pady=10)
-                
-            else:
-                for i in self.images_to_delete:
-                    print(self.scrollbar_images[int(i)-1])
-                    os.remove(self.scrollbar_images[int(i)-1][0])
-                    os.remove(self.scrollbar_images[int(i)-1][1])
-                
-                self.clear_images()
-                self.add_to_scrollbar()
-                self.images_to_delete = []
+        def delete_input_box1():
+            input_window = tk.Toplevel(self.root.root)
+            input_window.title("Enter Two Numbers")
+            input_window.geometry("300x200")
+            
+            tk.Label(input_window, text="Enter first number:").pack(pady=5)
+            first_number_entry = tk.Entry(input_window)
+            first_number_entry.pack(pady=5)
+            
+            tk.Label(input_window, text="Enter second number:").pack(pady=5)
+            second_number_entry = tk.Entry(input_window)
+            second_number_entry.pack(pady=5)
+            
             
             def process_numbers():
                 try:
@@ -151,45 +162,39 @@ class ViewerWindow:
                 except ValueError:
                     messagebox.showerror("Invalid Input", "Please enter valid numbers!")
             
-
-        button = tk.Button(self.root.root, text="Back", font=('Arial 14'), command=go_back)
+            tk.Button(input_window, text="Submit", command=process_numbers).pack(pady=10)
         
-        button2 = tk.Button(self.root.root, text="Show2D", font=('Arial 14'), command=show2d)
-        
-        button3 = tk.Button(self.root.root, text="Delete", font=('Arial 14'), command=show_input_box)
+        def delete_input_box2():
+            for i in self.images_to_delete:
+                print(self.scrollbar_images[int(i)-1])
+                os.remove(self.scrollbar_images[int(i)-1][0])
+                os.remove(self.scrollbar_images[int(i)-1][1])
+            
+            self.clear_images()
+            self.add_to_scrollbar()
+            self.images_to_delete = []
 
         # Highlight button on hover
-        def on_enter(e):
-            button.configure(bg='#2980b9')
 
-        def on_leave(e):
-            button.configure(bg=WINDOW_CONFIG['bg_color'])
+        def set_button(relx, rely, text, command):
+            button  = tk.Button(self.root.root, text=text, font=('Arial 14'), command=command)
+            def on_enter(e):
+                button.configure(bg='#2980b9')
             
-        def on_enter2(e):
-            button2.configure(bg='#2980b9')
+            def on_leave(e):
+                button.configure(bg=WINDOW_CONFIG['bg_color'])
+                
+                
+            button.bind('<Enter>', on_enter)
+            button.bind('<Leave>', on_leave)
+            
+            button.place(relx=relx, rely=rely)
 
-        def on_leave2(e):
-            button2.configure(bg=WINDOW_CONFIG['bg_color'])    
+        set_button(.013,.8, 'Back', go_back)
+        set_button(.1,.8, 'Show2D', show2d)
+        set_button(.2,.8, 'Delete Selected', delete_input_box2)
+        set_button(.2,.87, 'Delete Interval', delete_input_box1)
         
-        def on_enter3(e):
-            button3.configure(bg='#2980b9')
-
-        def on_leave3(e):
-            button3.configure(bg=WINDOW_CONFIG['bg_color'])
-
-        button.bind('<Enter>', on_enter)
-        button.bind('<Leave>', on_leave)
-        
-        button2.bind('<Enter>', on_enter2)
-        button2.bind('<Leave>', on_leave2)
-        
-        button3.bind('<Enter>', on_enter3)
-        button3.bind('<Leave>', on_leave3)
-        
-        button.place(relx=.15, rely=.8)
-        button2.place(relx=.25, rely=.8)
-        button3.place(relx = .4, rely = .8)
-
         self.root.root.state('zoomed')  # Maximize the window
         self.root.root.configure(bg='white')
         self.root.root.protocol("WM_DELETE_WINDOW", self.on_closing)  # Handle window close event
@@ -328,62 +333,77 @@ class ViewerWindow:
 
         self.scrollable_frame.bind("<Configure>", on_frame_configure)
 
+
+    def use_algorithm_image_by_image(self, significant_threshold_pixel = 80, largest_points_threshold=30):
+        try:
+            for widget in self.root.root.winfo_children():
+                widget.destroy()
+        except:
+            pass
+        
+        from finding_line import LineDetection
+        os.makedirs(self.path + '_alg', exist_ok=True)  # Create directory for processed files
+        processor = LineDetection(self.path, self.path + '_alg', 1, extension=self.pripona)
+        processor.significant_threshold_pixel = significant_threshold_pixel
+        processor.largest_points_threshold = largest_points_threshold
+        self.images_to_delete = []
+        
+        files = [f for f in os.listdir(self.path) if os.path.isfile(os.path.join(self.path, f))]
+
+        # Create a progress window for batch processing
+        progress_window = tk.Toplevel(self.root.root)
+        progress_window.title("Processing Images")
+        progress_window.geometry("400x150")
+        tk.Label(progress_window, text="Processing images, please wait...", font=("Arial", 12)).pack(pady=10)
+
+        # Progress bar for batch processing
+        progress_var = tk.DoubleVar()
+        progress_bar = ttk.Progressbar(progress_window, maximum=len(files), variable=progress_var)
+        progress_bar.pack(padx=20, pady=20, fill="x")
+
+        # Function to process images in a separate thread
+        def process_images():
+            for i, image_file in enumerate(files):
+                output_file = os.path.join(self.path, image_file)
+                try:
+                    processor.apply_to_image(output_file)
+                except Exception as e:
+                    print(f"Error processing {image_file}: {e}")
+                    continue
+            
+                # Update progress bar
+                progress_var.set(i + 1)
+                progress_window.update_idletasks()
+
+            self.all_points_to_img = processor.all_points
+            progress_window.destroy()
+
+        # Start the processing in a new thread
+        thread = threading.Thread(target=process_images)
+        thread.start()
+
+        # Check the thread status and update UI when finished
+        def check_thread():
+            if thread.is_alive():
+                self.root.root.after(100, check_thread)
+            else:
+                self.setup_window()  # Initialize the main window layout
+                self.create_menu()  # Create the menu bar
+                self.add_images() # Add images to Scrollbar
+
+        check_thread()
+
+    
     # Apply the algorithm to images
-    def use_algorithm(self, batch=True):
+    def use_algorithm_batch(self):
         from finding_line import LineDetection
         os.makedirs(self.path + '_alg', exist_ok=True)  # Create directory for processed files
         processor = LineDetection(self.path, self.path + '_alg', 1, extension=self.pripona)
         self.images_to_delete = []
         
-        if batch:
-            # Apply the algorithm to all files in the folder
-            processor.apply_to_folder()
-            self.all_points_to_img = processor.all_points
-        else:
-            files = [f for f in os.listdir(self.path) if os.path.isfile(os.path.join(self.path, f))]
-
-            # Create a progress window for batch processing
-            progress_window = tk.Toplevel(self.root.root)
-            progress_window.title("Processing Images")
-            progress_window.geometry("400x150")
-            tk.Label(progress_window, text="Processing images, please wait...", font=("Arial", 12)).pack(pady=10)
-
-            # Progress bar for batch processing
-            progress_var = tk.DoubleVar()
-            progress_bar = ttk.Progressbar(progress_window, maximum=len(files), variable=progress_var)
-            progress_bar.pack(padx=20, pady=20, fill="x")
-
-            # Function to process images in a separate thread
-            def process_images():
-                for i, image_file in enumerate(files):
-                    output_file = os.path.join(self.path, image_file)
-                    try:
-                        processor.apply_to_image(output_file)
-                    except Exception as e:
-                        print(f"Error processing {image_file}: {e}")
-                        continue
-                
-                    # Update progress bar
-                    progress_var.set(i + 1)
-                    progress_window.update_idletasks()
-
-                self.all_points_to_img = processor.all_points
-                progress_window.destroy()
-
-            # Start the processing in a new thread
-            thread = threading.Thread(target=process_images)
-            thread.start()
-
-            # Check the thread status and update UI when finished
-            def check_thread():
-                if thread.is_alive():
-                    self.root.root.after(100, check_thread)
-                else:
-                    self.setup_window()  # Initialize the main window layout
-                    self.create_menu()  # Create the menu bar
-                    self.add_images()
-
-            check_thread()
+        # Apply the algorithm to all files in the folder
+        processor.apply_to_folder()
+        self.all_points_to_img = processor.all_points
 
     # Open an existing project directory
     def open_project(self):
@@ -437,19 +457,18 @@ class ViewerWindow:
         messagebox.showinfo("Export", f"Export as {format} coming soon!")
 
     def scan_profile(self): 
-        messagebox.showinfo("Scan Profile", "Feature coming soon!")
+        for widget in self.root.root.winfo_children():
+            widget.destroy()
+            
+        from frontend.main_window import MainWindow
+        w = MainWindow(self.root.root)
+        w.handle_scan()
 
-    def browse_scans(self): 
-        messagebox.showinfo("Browse Scans", "Feature coming soon!")
-
-    def calibration(self): 
-        messagebox.showinfo("Calibration", "Feature coming soon!")
-
-    def start_scan(self): 
-        messagebox.showinfo("Start Scan", "Feature coming soon!")
-
-    def stop_scan(self): 
-        messagebox.showinfo("Stop Scan", "Feature coming soon!")
-
-    def save_scan(self): 
-        messagebox.showinfo("Save Scan", "Feature coming soon!")
+    def show_3d(self):
+        for widget in self.root.root.winfo_children():
+            widget.destroy()
+        
+        from frontend.main_window import MainWindow
+        w = MainWindow(self.root.root)
+        w.handle_3d()
+        
