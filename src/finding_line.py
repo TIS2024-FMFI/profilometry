@@ -19,53 +19,59 @@ class LineDetection:
         self.all_points = []
 
     def find_line_alg1(self, img):
-        # Detect the line using Algorithm 1
+        # Detect the line using a centroid-based light detection approach
         if isinstance(img, str):
             img = cv2.imread(img)
             img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         
         height, width = img.shape
-        largest_points = []
-        first_point = 0
+        centroid_points = []
+        first_centroid = 0
 
-        # Find highest pixels in each column
+        # Calculate the centroid of light in each column
         for col in range(width):
             column_pixels = img[:, col]
-            if max(column_pixels) > 80:
-                if first_point == 0:
-                    first_point = np.argmax(column_pixels)
-                largest_points.append((col, np.argmax(column_pixels)))
+            light_intensity_sum = np.sum(column_pixels)
+            
+            if light_intensity_sum > 0:  # Ensure there is non-zero intensity
+                # Compute the weighted average (centroid) for the column
+                centroid = np.sum(np.arange(height) * column_pixels) / light_intensity_sum
+                if first_centroid == 0:
+                    first_centroid = centroid
+                centroid_points.append((col, int(centroid)))
 
         new_img = np.zeros((height, width, 3), dtype=np.uint8)
 
         reference_points = []
         avg_reference = 0
         object_points = []
-        for point in largest_points:
-            if abs(point[1] - first_point) < 30:
+
+        for point in centroid_points:
+            if abs(point[1] - first_centroid) < 30:
                 reference_points.append(point)
                 avg_reference += point[1]
             else:
-                if point[1] > first_point:
+                if point[1] > first_centroid:
                     object_points.append(point)
         
         # Draw reference line
-        cv2.line(new_img, (0, avg_reference // len(reference_points)), 
-                 (img.shape[1], avg_reference // len(reference_points)), 
-                 (200, 120, 100), 3)
+        if reference_points:
+            avg_reference = avg_reference // len(reference_points)
+            cv2.line(new_img, (0, avg_reference), (img.shape[1], avg_reference), 
+                    (200, 120, 100), 3)
 
         # Draw object points
         for point in object_points:
             cv2.circle(new_img, (point[0], point[1]), radius=2, color=(0, 0, 255), thickness=-1)
 
-        # Calculate and store points
+        # Calculate and store points with distortion constant applied
         new_points = [(point[0], point[1] * self.shift_count * self.constant, 
-                       point[1] - avg_reference // len(reference_points)) 
-                      for point in object_points]
+                    point[1] - avg_reference) for point in object_points]
 
         self.all_points.append(np.array(new_points, np.int32))
         self.shift_count += 1
         return new_img
+
 
     def display_image(self, path):
         # Display processed image
