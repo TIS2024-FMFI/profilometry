@@ -82,7 +82,7 @@ class ViewerWindow:
         label1 = tk.Label(frame1, text="Significant threshold pixel:")
         label1.pack(side=tk.LEFT, padx=5)
 
-        significant_threshold_pixel_spinbox = tk.Spinbox(frame1, from_=0, to=100, width=10, textvariable=tk.StringVar(value="80"))
+        significant_threshold_pixel_spinbox = tk.Spinbox(frame1, from_=0, to=255, width=10, textvariable=tk.StringVar(value="80"))
         significant_threshold_pixel_spinbox.pack(side=tk.LEFT)
         
         
@@ -92,7 +92,7 @@ class ViewerWindow:
         label2 = tk.Label(frame2, text="Largest points threshold:")
         label2.pack(side=tk.LEFT, padx=5)
         
-        largest_points_threshold_spinbox = tk.Spinbox(frame2, from_=0, to=100, width=10, textvariable=tk.StringVar(value="30"))
+        largest_points_threshold_spinbox = tk.Spinbox(frame2, from_=0, to=255, width=10, textvariable=tk.StringVar(value="30"))
         largest_points_threshold_spinbox.pack(side=tk.LEFT)
 
         close_button = tk.Button(top, text="Apply", command=lambda: close_window(top))
