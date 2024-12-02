@@ -3,19 +3,19 @@ import cv2
 import os
 
 class LineDetection:
-    """To apply a new algorithm, set `algorithm = 1` in the `apply_to_folder` method. 
-    `algorithm = 2` refers to the old algorithm.
+    """To apply a new algorithm, set in the `apply_to_folder` method. 
     To process an entire folder of images, set the `path` where the images are located 
     and the `out_path` where the processed images should be saved. Ensure the output 
     folder exists before running the program."""
-    def __init__(self, path, out_path, constant, display=False, extension='jpg'):
+    def __init__(self, path, out_path, constant, extension='jpg'):
         # Initialize parameters
         self.path = path
         self.out_path = out_path
-        self.display = display
         self.extension = extension
         self.constant = constant
         self.shift_count = 1
+        self.significant_threshold_pixel = 80
+        self.largest_points_threshold = 30
         self.all_points = []
 
     def find_line_alg1(self, img):
@@ -31,7 +31,7 @@ class LineDetection:
         # Find highest pixels in each column
         for col in range(width):
             column_pixels = img[:, col]
-            if max(column_pixels) > 80:
+            if max(column_pixels) > self.significant_threshold_pixel:
                 if first_point == 0:
                     first_point = np.argmax(column_pixels)
                 largest_points.append((col, np.argmax(column_pixels)))
@@ -42,7 +42,7 @@ class LineDetection:
         avg_reference = 0
         object_points = []
         for point in largest_points:
-            if abs(point[1] - first_point) < 30:
+            if abs(point[1] - first_point) < self.largest_points_threshold:
                 reference_points.append(point)
                 avg_reference += point[1]
             else:
@@ -88,11 +88,8 @@ class LineDetection:
                 try:
                     output_file = os.path.join(self.out_path, filename)
                     img = self.find_line_alg1(file_path)
-                    
-                    if self.display:
-                        cv2.imshow("window", img)
-                        cv2.waitKey(0)
-                    elif output_file != "":
+
+                    if output_file != "":
                         #print(output_file)
                         cv2.imwrite(output_file, img)
                 except:
