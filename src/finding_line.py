@@ -3,11 +3,11 @@ import cv2
 import os
 
 class LineDetection:
-    """To apply a new algorithm, set `algorithm = 1` in the `apply_to_folder` method. 
-    `algorithm = 2` refers to the old algorithm.
-    To process an entire folder of images, set the `path` where the images are located 
-    and the `out_path` where the processed images should be saved. Ensure the output 
-    folder exists before running the program."""
+    """To apply the algorithm, set `algorithm = 1` in the `apply_to_folder` method. 
+    Specify the `path` where the input images are located and the `out_path` where the 
+    processed images should be saved. Ensure that the output folder exists before running the program.
+    """
+
     def __init__(self, path, out_path, constant, display=False, extension='jpg'):
         # Initialize parameters
         self.path = path
