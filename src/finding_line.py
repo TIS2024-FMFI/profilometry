@@ -19,16 +19,16 @@ class LineDetection:
         self.all_points = []
 
     def find_line_alg1(self, img):
-        # Detect the line using a centroid-based light detection approach
+        # Detect the line using Algorithm 1
         if isinstance(img, str):
             img = cv2.imread(img)
             img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         
         height, width = img.shape
-        centroid_points = []
-        first_centroid = 0
+        largest_points = []
+        first_point = 0
 
-        # Calculate the centroid of light in each column
+        # Find highest pixels in each column
         for col in range(width):
             column_pixels = img[:, col]
             if max(column_pixels) > self.significant_threshold_pixel:
@@ -46,22 +46,22 @@ class LineDetection:
                 reference_points.append(point)
                 avg_reference += point[1]
             else:
-                if point[1] > first_centroid:
+                if point[1] > first_point:
                     object_points.append(point)
         
         # Draw reference line
-        if reference_points:
-            avg_reference = avg_reference // len(reference_points)
-            cv2.line(new_img, (0, avg_reference), (img.shape[1], avg_reference), 
-                    (200, 120, 100), 3)
+        cv2.line(new_img, (0, avg_reference // len(reference_points)), 
+                 (img.shape[1], avg_reference // len(reference_points)), 
+                 (200, 120, 100), 3)
 
         # Draw object points
         for point in object_points:
             cv2.circle(new_img, (point[0], point[1]), radius=2, color=(0, 0, 255), thickness=-1)
 
-        # Calculate and store points with distortion constant applied
+        # Calculate and store points
         new_points = [(point[0], point[1] * self.shift_count * self.constant, 
-                    point[1] - avg_reference) for point in object_points]
+                       point[1] - avg_reference // len(reference_points)) 
+                      for point in object_points]
 
         self.all_points.append(np.array(new_points, np.int32))
         self.shift_count += 1
