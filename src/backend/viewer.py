@@ -125,6 +125,7 @@ class ViewerWindow:
                 ld.all_points = self.all_points_to_img
             else:
                 ld.apply_to_folder()
+                self.all_points_to_img = ld.all_points
             
             ld.display_all_points()
         
