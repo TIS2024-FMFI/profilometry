@@ -4,16 +4,45 @@ np.set_printoptions(threshold=np.inf)
 from tkinter import Menu, messagebox
 import cv2 as cv
 from config import WINDOW_CONFIG
+import matplotlib.pyplot as plt
+from matplotlib.figure import Figure
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+
 
 class Model3D:
     def __init__(self, path, root):
         self.root = root
         self.path = path
         from finding_line import LineDetection
-        ld = LineDetection(path, path+ '_alg', 1, 'png')
+        ld = LineDetection(path, path+ '_alg', 0.01, 'png')
+        ld.apply_to_folder()
         self.all_points = ld.get_all_points()
         self.create_menu()
         self.setup_window()
+        self.point_cloud()
+        self.show_3d()
+
+    def point_cloud(self):
+        point_cloud = self.all_points[0]
+        for trio in self.all_points:
+            if(len(point_cloud) == 0):
+                if(len(trio) > 1):
+                    point_cloud = trio
+            if(len(trio) > 1):
+                point_cloud = np.concatenate((point_cloud, trio), axis=0)
+        return point_cloud
+    
+    def show_3d(self):
+        point_cloud = self.point_cloud()
+        fig = Figure(figsize=(8, 6), dpi=100)
+        ax = fig.add_subplot(111, projection='3d')
+        ax.scatter(point_cloud[:, 0], point_cloud[:, 1], point_cloud[:, 2])
+        ax.set_xlabel("X axis")
+        ax.set_ylabel("Y axis")
+        ax.set_zlabel("Z axis") 
+        canvas = FigureCanvasTkAgg(fig, master=self.root.current_frame)
+        canvas.draw()
+        canvas.get_tk_widget().pack(fill='both', expand=True)
 
     def create_menu(self):
         self.menubar = Menu(self.root.root)
@@ -41,7 +70,8 @@ class Model3D:
         main_menu.add_command(label= "View Scans", command=self.browse_scans)
 
     def setup_window(self):
-        lbl = tk.Label(self.root.root, text="3D model", font=('Arial 14')) 
+        title = self.path.split('/')[-1]
+        lbl = tk.Label(self.root.root, text="3D model "+title, font=('Arial 14')) 
         lbl.config(bg='white')
         lbl.place(x=550, y=50)
 
