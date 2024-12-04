@@ -9,6 +9,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from config import WINDOW_CONFIG
 from backend.scanner import Scanner
 from backend.viewer import ViewerWindow
+from backend.model_3d import Model3D
 
 class MainWindow:
     def __init__(self, root):
@@ -174,5 +175,5 @@ class MainWindow:
 
     def handle_3d(self):
         """Handle the 'SHOW 3D MODEL' button click"""
-        from backend.model_3d import start_3d_view
-        start_3d_view()
+        self.clear_window()
+        model3d = Model3D('images/gombik',self)
