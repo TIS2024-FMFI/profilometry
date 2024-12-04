@@ -16,7 +16,8 @@ class Model3D:
         self.root = root
         self.path = path
         from finding_line import LineDetection
-        self.all_points = LineDetection.get_all_points()
+        ld = LineDetection(path, path+ '_alg', 1, 'png')
+        self.all_points = ld.get_all_points()
         self.create_menu()
         self.setup_window()
 
