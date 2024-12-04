@@ -80,34 +80,6 @@ class Model3D:
         self.root.root.configure(bg='white')
         self.root.root.protocol("WM_DELETE_WINDOW", self.on_closing)  # Handle window close event   
 
-    # def vytvor_jeden_zoznam(self,z):
-    #     the_zoznam = self.all_points[0]
-    #     for zoznam in self.all_points:
-    #         if(len(the_zoznam) == 0):
-    #             if(len(zoznam) > 1):
-    #                 the_zoznam = zoznam
-    #         if(len(zoznam) > 1):
-    #             the_zoznam = np.concatenate((the_zoznam, zoznam), axis=0)
-    #     print(the_zoznam)
-    #     return the_zoznam
-    
-    # def vytvor_poly_siet(self):
-    #     zoznam = self.vytvor_jeden_zoznam()
-    #     if(len(zoznam) > 1):
-    #         tri = Delaunay(zoznam[:,:2])
-    #         faces = tri.simplices #indexy trojuholnikov
-    #         mesh = trimesh.Trimesh(vertices=zoznam, faces=faces)
-    #         mesh.export('output_mesh.obj')
-    #         print('Exported to output_mesh.obj')
-    #         fig = plt.figure()
-    #         ax = fig.add_subplot(111, projection='3d')
-    #         ax.add_collection3d(
-    #             Poly3DCollection(mesh.triangles, facecolors='skyblue', linewidths=1, edgecolors='black'))
-    #         ax.set_xlim([zoznam[:, 0].min(), zoznam[:, 0].max()])
-    #         ax.set_ylim([zoznam[:, 1].min(), zoznam[:, 1].max()])
-    #         ax.set_zlim([zoznam[:, 2].min(), zoznam[:, 2].max()])
-    #         plt.show()
-    
      # Placeholder methods for features under development
     
     def new_project(self): 
