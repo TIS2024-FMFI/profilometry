@@ -4,12 +4,6 @@ np.set_printoptions(threshold=np.inf)
 from tkinter import Menu, messagebox
 import cv2 as cv
 from config import WINDOW_CONFIG
-# import matplotlib.pyplot as plt
-# from scipy.spatial import Delaunay
-# import trimesh
-# from mpl_toolkits.mplot3d.art3d import Poly3DCollection
-
-
 
 class Model3D:
     def __init__(self, path, root):
