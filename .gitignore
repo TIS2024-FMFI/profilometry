@@ -1,3 +1,4 @@
 /images/skusk/*
 /images/skusk_out/*
 __pycache__/
+*.pyc
