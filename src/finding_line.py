@@ -110,3 +110,6 @@ class LineDetection:
         cv2.imshow("All Points", combined_img)
         cv2.waitKey(0)
         cv2.destroyAllWindows()
+
+    def get_all_points(self):
+        return self.all_points
