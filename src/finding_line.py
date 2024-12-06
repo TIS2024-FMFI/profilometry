@@ -31,10 +31,26 @@ class LineDetection:
         # Find highest pixels in each column
         for col in range(width):
             column_pixels = img[:, col]
-            if max(column_pixels) > self.significant_threshold_pixel:
-                if first_point == 0:
-                    first_point = np.argmax(column_pixels)
-                largest_points.append((col, np.argmax(column_pixels)))
+            
+            # Check if the column has significant intensity
+            if np.max(column_pixels) < self.significant_threshold_pixel:
+                continue  # Skip columns without a significant laser signal
+            
+            # Mask to focus on pixels above the threshold
+            laser_mask = column_pixels > self.significant_threshold_pixel
+            intensity_sum = np.sum(column_pixels[laser_mask])
+            
+            if intensity_sum == 0:
+                continue  # Skip if no significant points after masking
+            
+            # Calculate weighted centroid of laser
+            indices = np.arange(height)[laser_mask]
+            weighted_sum = np.sum(indices * column_pixels[laser_mask])
+            centroid = int(weighted_sum / intensity_sum)
+
+            if first_point == 0:
+                first_point = centroid
+            largest_points.append((col, centroid))
 
         new_img = np.zeros((height, width, 3), dtype=np.uint8)
 
@@ -66,7 +82,6 @@ class LineDetection:
         self.all_points.append(np.array(new_points, np.int32))
         self.shift_count += 1
         return new_img
-
 
     def display_image(self, path):
         # Display processed image
