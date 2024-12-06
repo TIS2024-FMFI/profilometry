@@ -3,7 +3,7 @@ from tkinter import filedialog
 from tkinter import ttk
 from PIL import Image, ImageTk
 from tkinter import messagebox
-from config import WINDOW_CONFIG
+from config import *
 import os
 import cv2
 import threading
@@ -17,6 +17,8 @@ class ViewerWindow:
         self.all_points_to_img = []
         self.images_to_delete = []
         self.pripona = 'png'  # File extension (e.g., png, jpg)
+        LINE_DETECTION['significant_threshold_pixel'] = 80
+        LINE_DETECTION['largest_points_threshold'] = 30
 
         if not self.check_needs_generation():  # Check if files need to be processed
             self.add_images()  # Add existing images
@@ -64,11 +66,10 @@ class ViewerWindow:
         top.geometry("300x200")
 
         def close_window(top):
-            significant_threshold_pixel = int(significant_threshold_pixel_spinbox.get())
-            largest_points_threshold = int(largest_points_threshold_spinbox.get())
+            LINE_DETECTION['significant_threshold_pixel'] = int(significant_threshold_pixel_spinbox.get())
+            LINE_DETECTION['largest_points_threshold'] = int(largest_points_threshold_spinbox.get())
             top.destroy()    
-            self.use_algorithm_image_by_image(significant_threshold_pixel = significant_threshold_pixel, 
-                                              largest_points_threshold = largest_points_threshold)
+            self.use_algorithm_image_by_image()
         
         frame1 = tk.Frame(top)
         frame1.pack(pady=10)
@@ -370,7 +371,7 @@ class ViewerWindow:
         self.scrollable_frame.bind("<Configure>", on_frame_configure)
 
 
-    def use_algorithm_image_by_image(self, significant_threshold_pixel = 80, largest_points_threshold=30):
+    def use_algorithm_image_by_image(self):
         try:
             for widget in self.root.root.winfo_children():
                 widget.destroy()
@@ -380,8 +381,8 @@ class ViewerWindow:
         from finding_line import LineDetection
         os.makedirs(self.path + '_alg', exist_ok=True)  # Create directory for processed files
         processor = LineDetection(self.path, self.path + '_alg', 1, extension=self.pripona)
-        processor.significant_threshold_pixel = significant_threshold_pixel
-        processor.largest_points_threshold = largest_points_threshold
+        processor.significant_threshold_pixel = LINE_DETECTION['significant_threshold_pixel']
+        processor.largest_points_threshold = LINE_DETECTION['largest_points_threshold']
         self.images_to_delete = []
         
         files = [f for f in os.listdir(self.path) if os.path.isfile(os.path.join(self.path, f))]
