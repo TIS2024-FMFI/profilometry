@@ -1,6 +1,7 @@
 import numpy as np
 import cv2
 import os
+from config import LINE_DETECTION
 
 class LineDetection:
     """To apply a new algorithm, set in the `apply_to_folder` method. 
@@ -14,8 +15,6 @@ class LineDetection:
         self.extension = extension
         self.constant = constant
         self.shift_count = 1
-        self.significant_threshold_pixel = 80
-        self.largest_points_threshold = 30
         self.all_points = []
 
     def find_line_alg1(self, img):
@@ -33,11 +32,11 @@ class LineDetection:
             column_pixels = img[:, col]
             
             # Check if the column has significant intensity
-            if np.max(column_pixels) < self.significant_threshold_pixel:
+            if np.max(column_pixels) < LINE_DETECTION['significant_threshold_pixel']:
                 continue  # Skip columns without a significant laser signal
             
             # Mask to focus on pixels above the threshold
-            laser_mask = column_pixels > self.significant_threshold_pixel
+            laser_mask = column_pixels > LINE_DETECTION['significant_threshold_pixel']
             intensity_sum = np.sum(column_pixels[laser_mask])
             
             if intensity_sum == 0:
@@ -58,7 +57,7 @@ class LineDetection:
         avg_reference = 0
         object_points = []
         for point in largest_points:
-            if abs(point[1] - first_point) < self.largest_points_threshold:
+            if abs(point[1] - first_point) < LINE_DETECTION['largest_points_threshold']:
                 reference_points.append(point)
                 avg_reference += point[1]
             else:

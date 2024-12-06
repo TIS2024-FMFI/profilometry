@@ -14,3 +14,8 @@ BUTTON_CONFIG = {
     'padding': 10,             # Padding around buttons
     'font': ('Arial', 11)      # Font style for buttons
 }
+
+LINE_DETECTION = {
+    'significant_threshold_pixel': 80,
+    'largest_points_threshold': 30
+}
