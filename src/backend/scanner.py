@@ -43,7 +43,7 @@ class Scanner:
         export_menu.add_command(label="OBJ", command=lambda: self.export_file("obj"))
         export_menu.add_command(label="GLTF", command=lambda: self.export_file("gltf"))
         file_menu.add_separator()
-        file_menu.add_command(label="Back to Main Menu", command=self.main_window.show_main_menu)
+        file_menu.add_command(label="Back to Main Menu", command=self.back_to_main_menu)
         file_menu.add_command(label="Exit", command=self.exit_application)
 
         # Main Menu
@@ -98,6 +98,7 @@ class Scanner:
     def start_camera_view(self):
         """Initialize the camera view."""
         self.cap = cv2.VideoCapture(self.camera_index)
+        print()
         if not self.cap.isOpened():
             messagebox.showerror("Error", "Unable to access camera.")
             return
@@ -132,27 +133,46 @@ class Scanner:
         Thread(target=self.stream, daemon=True).start()
 
     def stream(self):
-        """Continuously capture and display frames from the camera."""
+        """Continuous capture and display of camera images."""
         while self.running:
-            ret, frame = self.cap.read()
-            if not ret:
+            try:
+                # Check if the canvas still exists
+                if not self.canvas or not self.canvas.winfo_exists():
+                    break
+
+                ret, frame = self.cap.read()
+                if not ret:
+                    break
+
+                # Check if the main window is still active
+                if not self.main_window.root.winfo_exists():
+                    break
+
+                frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+
+                # Finding the dimensions of the canvas
+                canvas_width = self.canvas.winfo_width()
+                canvas_height = self.canvas.winfo_height()
+
+                if canvas_width > 0 and canvas_height > 0:
+                    frame = cv2.resize(frame, (canvas_width, canvas_height))
+
+                    # Image conversion to Tkinter format
+                    photo = self.convert_frame_to_image(frame)
+
+                    # image display
+                    if self.canvas and self.canvas.winfo_exists():
+                        self.canvas.create_image(0, 0, anchor="nw", image=photo)
+                        self.canvas.image = photo
+
+            except Exception as e:
+                print(f"Chyba v streame: {e}")
                 break
 
-            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-
-            # Resize frame to maintain a 16:9 aspect ratio
-            canvas_width = self.canvas.winfo_width()
-            canvas_height = self.canvas.winfo_height()
-
-            if canvas_width > 0 and canvas_height > 0:
-                frame = cv2.resize(frame, (canvas_width, canvas_height))
-
-                # Convert frame to a format Tkinter can use
-                photo = self.convert_frame_to_image(frame)
-
-                # Display the image on the canvas
-                self.canvas.create_image(0, 0, anchor="nw", image=photo)
-                self.canvas.image = photo
+        # Definite stop
+        self.running = False
+        if self.cap:
+            self.cap.release()
 
     def convert_frame_to_image(self, frame):
         """Convert OpenCV frame to a format usable by Tkinter."""
@@ -166,6 +186,24 @@ class Scanner:
             self.cap.release()
         if self.canvas:
             self.canvas.delete("all")
+    def back_to_main_menu(self):
+        """Navigate back to the main menu."""
+        # Stop stream
+        self.running = False
+        
+        # Release the camera
+        if self.cap:
+            self.cap.release()
+        
+        # Unbind events
+        self.main_window.root.unbind("<Configure>")
+        
+        # Vymazať všetky widgety
+        for widget in self.main_window.root.winfo_children():
+            widget.destroy()
+        
+        # Delete all widgets
+        self.main_window.show_main_menu()
 
     def exit_application(self):
         """Exit the application."""
