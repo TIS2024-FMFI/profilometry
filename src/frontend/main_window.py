@@ -7,9 +7,9 @@ import os
 # Add the parent directory to the system path for module imports
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from config import WINDOW_CONFIG
-from backend.scanner import Scanner
-from backend.viewer import ViewerWindow
-from backend.model_3d import Model3D
+from frontend.scanner import Scanner
+from frontend.viewer import ViewerWindow
+from frontend.model_3d import Model3D
 
 class MainWindow:
     def __init__(self, root):
