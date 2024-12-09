@@ -13,33 +13,35 @@ class Model3D:
     def __init__(self, path, root):
         self.root = root
         self.path = path
-        from finding_line import LineDetection
-        ld = LineDetection(path, path+ '_alg', 0.01, 'png')
-        ld.apply_to_folder()
-        self.all_points = ld.get_all_points()
         self.create_menu()
         self.setup_window()
-        self.point_cloud()
         self.show_3d()
 
     def point_cloud(self):
-        point_cloud = self.all_points[0]
-        for trio in self.all_points:
-            if(len(point_cloud) == 0):
-                if(len(trio) > 1):
-                    point_cloud = trio
-            if(len(trio) > 1):
-                point_cloud = np.concatenate((point_cloud, trio), axis=0)
-        return point_cloud
+        file_path = f"{self.path+'_alg'}/points.txt"
+        try:
+            point_cloud = np.loadtxt(file_path, dtype=int)
+            return point_cloud
+        except FileNotFoundError:
+            print(f"Error: File {file_path} not found.")
+            messagebox.showerror("File Not Found", f"Could not find {file_path}")
+            return np.empty((0, 3))
+        except ValueError:
+            print(f"Error: Invalid file format in {file_path}.")
+            messagebox.showerror("Invalid File Format", f"{file_path} contains invalid data.")
+            return np.empty((0, 3))
     
     def show_3d(self):
         point_cloud = self.point_cloud()
+        if point_cloud.size == 0:
+            return 
         fig = Figure(figsize=(8, 6), dpi=100)
         ax = fig.add_subplot(111, projection='3d')
-        ax.scatter(point_cloud[:, 0], point_cloud[:, 1], point_cloud[:, 2])
-        ax.set_xlabel("X axis")
-        ax.set_ylabel("Y axis")
-        ax.set_zlabel("Z axis") 
+        ax.scatter(point_cloud[:, 0], point_cloud[:, 1], point_cloud[:, 2], c='blue', s=1)
+        ax.grid(False)  
+        ax.set_axis_off() 
+        fig.patch.set_facecolor('white')
+        ax.set_facecolor('white')
         canvas = FigureCanvasTkAgg(fig, master=self.root.current_frame)
         canvas.draw()
         canvas.get_tk_widget().pack(fill='both', expand=True)
