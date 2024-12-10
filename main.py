@@ -30,10 +30,10 @@ def install_requirements():
 
 def main():
     # Ensure pip and distutils are ready
-    #ensure_pip_installed()
+    ensure_pip_installed()
     
     # Install dependencies
-    #install_requirements()
+    install_requirements()
 
     # Start the application
     import tkinter as tk
