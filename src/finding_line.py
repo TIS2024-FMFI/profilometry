@@ -1,6 +1,7 @@
 import numpy as np
 import cv2
 import os
+from config import LINE_DETECTION
 
 class LineDetection:
     """To apply a new algorithm, set in the `apply_to_folder` method. 
@@ -14,9 +15,9 @@ class LineDetection:
         self.extension = extension
         self.constant = constant
         self.shift_count = 1
-        self.significant_threshold_pixel = 80
-        self.largest_points_threshold = 30
         self.all_points = []
+        self.all_points2 = []
+        self.all_points2 = []
 
     def find_line_alg1(self, img):
         # Detect the line using Algorithm 1
@@ -31,10 +32,26 @@ class LineDetection:
         # Find highest pixels in each column
         for col in range(width):
             column_pixels = img[:, col]
-            if max(column_pixels) > self.significant_threshold_pixel:
-                if first_point == 0:
-                    first_point = np.argmax(column_pixels)
-                largest_points.append((col, np.argmax(column_pixels)))
+            
+            # Check if the column has significant intensity
+            if np.max(column_pixels) < LINE_DETECTION['significant_threshold_pixel']:
+                continue  # Skip columns without a significant laser signal
+            
+            # Mask to focus on pixels above the threshold
+            laser_mask = column_pixels > LINE_DETECTION['significant_threshold_pixel']
+            intensity_sum = np.sum(column_pixels[laser_mask])
+            
+            if intensity_sum == 0:
+                continue  # Skip if no significant points after masking
+            
+            # Calculate weighted centroid of laser
+            indices = np.arange(height)[laser_mask]
+            weighted_sum = np.sum(indices * column_pixels[laser_mask])
+            centroid = int(weighted_sum / intensity_sum)
+
+            if first_point == 0:
+                first_point = centroid
+            largest_points.append((col, centroid))
 
         new_img = np.zeros((height, width, 3), dtype=np.uint8)
 
@@ -42,7 +59,7 @@ class LineDetection:
         avg_reference = 0
         object_points = []
         for point in largest_points:
-            if abs(point[1] - first_point) < self.largest_points_threshold:
+            if abs(point[1] - first_point) < LINE_DETECTION['largest_points_threshold']:
                 reference_points.append(point)
                 avg_reference += point[1]
             else:
@@ -64,6 +81,11 @@ class LineDetection:
                       for point in object_points]
 
         self.all_points.append(np.array(new_points, np.int32))
+        
+        for pnt in object_points:
+            self.all_points2.append((pnt[0], pnt[1] * self.shift_count * self.constant, 
+                             pnt[1] - avg_reference // len(reference_points)))
+        
         self.shift_count += 1
         return new_img
 
@@ -82,6 +104,7 @@ class LineDetection:
     def apply_to_folder(self):
         # Apply the algorithm to all images in the folder
         self.all_points = []
+        self.all_points2 = []
         for filename in os.listdir(self.path):
             if filename.endswith("." + self.extension):
                 file_path = os.path.join(self.path, filename)
@@ -94,7 +117,8 @@ class LineDetection:
                         cv2.imwrite(output_file, img)
                 except:
                     pass
-                
+        
+        self.write_points_to_file()
         #self.vykresli_vsetky_body()
 
     def display_all_points(self):
@@ -110,5 +134,24 @@ class LineDetection:
         cv2.waitKey(0)
         cv2.destroyAllWindows()
 
+    def display_all_points2(self):
+        # Display all detected points in one image
+        combined_img = np.zeros((1080, 1920, 3), dtype=np.uint8)
+
+        for points in self.all_points2:
+            cv2.circle(combined_img, (points[0] - 400, int(points[1] * 0.01 + 400)), 
+                           radius=2, color=(0, 255, 0), thickness=-1)
+        
+        cv2.imshow("All Points", combined_img)
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
+
+
     def get_all_points(self):
         return self.all_points
+    
+    
+    def write_points_to_file(self):
+        with open(self.out_path+'/points.txt', mode = 'w') as file:
+            for i in self.all_points2:
+                print(f'{i[0]} {i[1]} {i[2]}', file = file)

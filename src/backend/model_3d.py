@@ -7,6 +7,10 @@ from config import WINDOW_CONFIG
 import matplotlib.pyplot as plt
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+from stl import mesh
+import trimesh
+from pygltflib import GLTF2, Mesh as GLTFMesh, Node, Scene, Buffer, BufferView, Accessor
+
 
 
 class Model3D:
@@ -119,7 +123,71 @@ class Model3D:
         messagebox.showinfo("Save Project", "Feature coming soon!")
 
     def export_file(self, format): 
-        messagebox.showinfo("Export", f"Export as {format} coming soon!")
+        point_cloud = self.point_cloud()
+        if point_cloud.size == 0:
+            messagebox.showerror("Error", "No file to export.")
+            return
+
+        output_file = f"{self.path+'_alg'}/exported_model.{format}"
+
+        try:
+            if format == "stl":
+                self.export_stl(output_file, point_cloud)
+            elif format == "obj":
+                self.export_obj(output_file, point_cloud)
+            elif format == "gltf":
+                self.export_gltf(output_file, point_cloud)
+            else:
+                raise ValueError("Unsupported format.")
+            messagebox.showinfo("Export Successful", f"Model exported as {output_file}.")
+        except Exception as e:
+            messagebox.showerror("Export Failed", f"Failed to export model: {e}")
+
+    def export_stl(self, file_path, point_cloud):
+        num_triangles = len(point_cloud) // 3
+        triangles = point_cloud[:num_triangles * 3].reshape((num_triangles, 3, 3))
+        stl_mesh = mesh.Mesh(np.zeros(triangles.shape[0], dtype=mesh.Mesh.dtype))
+        for i, triangle in enumerate(triangles):
+            stl_mesh.vectors[i] = triangle
+        stl_mesh.save(file_path)
+
+    def export_obj(self, file_path, point_cloud):
+        try:
+            if point_cloud.size % 3 != 0:
+                point_cloud = point_cloud[:-(point_cloud.size % 3)] 
+            point_cloud = point_cloud.reshape(-1, 3)
+            mesh = trimesh.points.PointCloud(point_cloud)
+            mesh.export(filename)
+            print(f"Model exported to {filename}")
+        except Exception as e:
+            print(f"Failed to export model: {e}")
+
+    def export_gltf(self, file_path, point_cloud):
+        vertices = point_cloud.astype(np.float32).flatten().tobytes()
+        buffer = Buffer(uri="data.bin", byteLength=len(vertices))
+        buffer_view = BufferView(buffer=0, byteOffset=0, byteLength=len(vertices), target=34962) 
+        accessor = Accessor(
+            bufferView=0,
+            byteOffset=0,
+            componentType=5126, 
+            count=len(point_cloud),
+            type="VEC3",
+            max=[float(x) for x in np.max(point_cloud, axis=0)],
+            min=[float(x) for x in np.min(point_cloud, axis=0)],
+        )
+        gltf_mesh = GLTFMesh(primitives=[{"attributes": {"POSITION": 0}}])
+        node = Node(mesh=0)
+        scene = Scene(nodes=[0])
+        gltf = GLTF2(
+            buffers=[buffer],
+            bufferViews=[buffer_view],
+            accessors=[accessor],
+            meshes=[gltf_mesh],
+            nodes=[node],
+            scenes=[scene],
+            scene=0,
+        )
+        gltf.save(file_path)
 
     def scan_profile(self): 
         for widget in self.root.root.winfo_children():

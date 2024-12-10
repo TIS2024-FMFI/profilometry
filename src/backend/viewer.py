@@ -3,17 +3,22 @@ from tkinter import filedialog
 from tkinter import ttk
 from PIL import Image, ImageTk
 from tkinter import messagebox
-from config import WINDOW_CONFIG
+from config import *
 import os
+import cv2
 import threading
 
 class ViewerWindow:
     def __init__(self, path, root ):
         self.root = root
+        self.root.root.minsize(1920, 1080)
+        self.root.root.maxsize(1920, 1080)
         self.path = path
         self.all_points_to_img = []
         self.images_to_delete = []
         self.pripona = 'png'  # File extension (e.g., png, jpg)
+        LINE_DETECTION['significant_threshold_pixel'] = 80
+        LINE_DETECTION['largest_points_threshold'] = 30
 
         if not self.check_needs_generation():  # Check if files need to be processed
             self.add_images()  # Add existing images
@@ -31,7 +36,7 @@ class ViewerWindow:
             files_alg = []
             
         # If processed files exist and match the count of originals, no generation is needed
-        if len(files_alg) > 0 and len(files) == len(files_alg):
+        if len(files_alg) > 0 and len(files) <= len(files_alg):
             return False
 
         return True
@@ -44,15 +49,8 @@ class ViewerWindow:
         # File menu
         file_menu = tk.Menu(self.menubar, tearoff=0)
         self.menubar.add_cascade(label="File", menu=file_menu)
-        file_menu.add_command(label="New Project", command=self.new_project)
         file_menu.add_command(label="Open Project", command=self.open_project)
         file_menu.add_command(label="Use Algorithm", command=self.use_algorithm_to_images)
-        file_menu.add_command(label="Save Project", command=self.save_project)
-        export_menu = tk.Menu(file_menu, tearoff=0)
-        file_menu.add_cascade(label="Export", menu=export_menu)
-        export_menu.add_command(label="STL", command=lambda: self.export_file("stl"))
-        export_menu.add_command(label="OBJ", command=lambda: self.export_file("obj"))
-        export_menu.add_command(label="GLTF", command=lambda: self.export_file("gltf"))
         file_menu.add_separator()
         file_menu.add_command(label="Exit", command=self.on_closing)
 
@@ -64,17 +62,14 @@ class ViewerWindow:
 
     def use_algorithm_to_images(self):
         top = tk.Toplevel(self.root.root)
-        top.title("Výber čísla")
+        top.title("Výber hodnôt algoritmu")
         top.geometry("300x200")
 
         def close_window(top):
-            significant_threshold_pixel = int(significant_threshold_pixel_spinbox.get())
-            largest_points_threshold = int(largest_points_threshold_spinbox.get())
+            LINE_DETECTION['significant_threshold_pixel'] = int(significant_threshold_pixel_spinbox.get())
+            LINE_DETECTION['largest_points_threshold'] = int(largest_points_threshold_spinbox.get())
             top.destroy()    
-            self.use_algorithm_image_by_image(significant_threshold_pixel = significant_threshold_pixel, 
-                                              largest_points_threshold = largest_points_threshold)
-
-        # Spinbox
+            self.use_algorithm_image_by_image()
         
         frame1 = tk.Frame(top)
         frame1.pack(pady=10)
@@ -131,6 +126,7 @@ class ViewerWindow:
                 ld.all_points = self.all_points_to_img
             else:
                 ld.apply_to_folder()
+                self.all_points_to_img = ld.all_points
             
             ld.display_all_points()
         
@@ -166,7 +162,7 @@ class ViewerWindow:
         
         def delete_input_box2():
             for i in self.images_to_delete:
-                print(self.scrollbar_images[int(i)-1])
+                #print(self.scrollbar_images[int(i)-1])
                 os.remove(self.scrollbar_images[int(i)-1][0])
                 os.remove(self.scrollbar_images[int(i)-1][1])
             
@@ -229,7 +225,7 @@ class ViewerWindow:
                 
                 self.scrollbar_images.append((file_path, processed_image_path))
                 
-                label.pack(padx=10, pady=10)
+                label.pack(padx=170, pady=10)
                 label.config(bg="white")
                 count += 1
 
@@ -257,6 +253,14 @@ class ViewerWindow:
                 # Set up click event for each label
                 label.bind("<Button-1>", lambda event, name=str(count) + '|' + file_path: self.on_item_click(name))
                 label.bind("<Button-3>", lambda event, label=label: on_right_click(event, label))
+                
+                label.bind("<MouseWheel>", self.on_mouse_wheel)
+                label.bind("<Button-4>", self.on_mouse_wheel)
+                label.bind("<Button-5>", self.on_mouse_wheel)
+                
+                self.scrollable_frame.bind("<MouseWheel>", self.on_mouse_wheel)
+                self.scrollable_frame.bind("<Button-4>", self.on_mouse_wheel)
+                self.scrollable_frame.bind("<Button-5>", self.on_mouse_wheel)
 
         if first_image:
             self.on_item_click(first_image)
@@ -278,15 +282,44 @@ class ViewerWindow:
         adjusted_image = Image.open(processed_image_path).resize((300, 300))
         original_photo_image = ImageTk.PhotoImage(original_image)
         adjusted_photo_image = ImageTk.PhotoImage(adjusted_image)
-
+        
         # Update image labels
         self.image_labelPrew.config(image=original_photo_image)
         self.image_labelPrew.image = original_photo_image
+        self.image_labelPrew.image_path = photo
 
         self.image_labelAlg.config(image=adjusted_photo_image)
         self.image_labelAlg.image = adjusted_photo_image
+        self.image_labelAlg.image_path = processed_image_path
         
-        # Add images to the UI and set up the scrollable frame
+        self.image_labelPrew.bind("<Button-1>", lambda event: self.show_fullscreen(event, self.image_labelPrew))
+        self.image_labelAlg.bind("<Button-1>", lambda event: self.show_fullscreen(event, self.image_labelAlg))
+
+        def on_hover(event, img):
+            img.config(cursor="hand2")
+        
+        self.image_labelPrew.bind("<Enter>", lambda event: on_hover(event, self.image_labelPrew))
+        self.image_labelAlg.bind("<Enter>", lambda event:  on_hover(event, self.image_labelAlg))
+            
+    
+    def show_fullscreen(self, event, type_img):
+        img = cv2.imread(type_img.image_path)
+        height, width = img.shape[:2]
+        new_width = int(width * 0.5)
+        new_height = int(height * 0.5)
+        new_img = cv2.resize(img, (new_width, new_height), interpolation=cv2.INTER_AREA)
+        cv2.imshow("window", new_img)
+        cv2.waitKey(0)
+       
+    
+    def on_mouse_wheel(self, event):
+        if event.num == 4 or event.delta == 120: 
+            self.canvasScrollFrame.yview_scroll(-1, "units")
+        elif event.num == 5 or event.delta == -120: 
+            self.canvasScrollFrame.yview_scroll(1, "units")
+        
+     
+    # Add images to the UI and set up the scrollable frame
     def add_images(self):
         self.scrollFrame = tk.Frame(self.root.root, height=400, width=500)
         self.canvasScrollFrame = tk.Canvas(self.scrollFrame, height=400, width=500)
@@ -302,12 +335,16 @@ class ViewerWindow:
         self.scrollable_frame = tk.Frame(self.canvasScrollFrame)
         self.scrollable_frame.config(bg='white')
 
+        self.canvasScrollFrame.bind("<MouseWheel>", self.on_mouse_wheel)
+        self.canvasScrollFrame.bind("<Button-4>", self.on_mouse_wheel)
+        self.canvasScrollFrame.bind("<Button-5>", self.on_mouse_wheel)
+        
         # Add labels for preview sections
         self.Scan1Prewlbl = tk.Label(self.root.root, text="Scan 1 Preview", font=('Arial 14'))  # Original preview
         self.Scan1Prewlbl.place(x=700, y=200)
 
         self.Scan2Prewlbl = tk.Label(self.root.root, text="Scan 1 Adjusted", font=('Arial 14'))  # Adjusted image preview
-        self.Scan2Prewlbl.place(x=700, y=500)
+        self.Scan2Prewlbl.place(x=700, y=550)
 
         # Place scrollable frame inside the canvas
         self.canvasScrollFrame.create_window((0, 0), window=self.scrollable_frame, anchor="nw")
@@ -322,7 +359,7 @@ class ViewerWindow:
         self.image_labelPrew.pack(padx=20, pady=40)
 
         self.image_labelAlg = tk.Label(self.root.root)
-        self.image_labelAlg.pack(padx=20, pady=20)
+        self.image_labelAlg.pack(padx=20, pady=40)
 
         # Populate the scrollbar with image labels
         self.add_to_scrollbar()
@@ -334,7 +371,7 @@ class ViewerWindow:
         self.scrollable_frame.bind("<Configure>", on_frame_configure)
 
 
-    def use_algorithm_image_by_image(self, significant_threshold_pixel = 80, largest_points_threshold=30):
+    def use_algorithm_image_by_image(self):
         try:
             for widget in self.root.root.winfo_children():
                 widget.destroy()
@@ -344,8 +381,8 @@ class ViewerWindow:
         from finding_line import LineDetection
         os.makedirs(self.path + '_alg', exist_ok=True)  # Create directory for processed files
         processor = LineDetection(self.path, self.path + '_alg', 1, extension=self.pripona)
-        processor.significant_threshold_pixel = significant_threshold_pixel
-        processor.largest_points_threshold = largest_points_threshold
+        processor.significant_threshold_pixel = LINE_DETECTION['significant_threshold_pixel']
+        processor.largest_points_threshold = LINE_DETECTION['largest_points_threshold']
         self.images_to_delete = []
         
         files = [f for f in os.listdir(self.path) if os.path.isfile(os.path.join(self.path, f))]
@@ -375,6 +412,7 @@ class ViewerWindow:
                 progress_var.set(i + 1)
                 progress_window.update_idletasks()
 
+            processor.write_points_to_file()
             self.all_points_to_img = processor.all_points
             progress_window.destroy()
 
@@ -447,14 +485,6 @@ class ViewerWindow:
             messagebox.showerror("Processing Error", "An error occurred during processing. Images cannot be displayed.")
 
     # Placeholder methods for features under development
-    def new_project(self): 
-        messagebox.showinfo("New Project", "Feature coming soon!") 
-
-    def save_project(self): 
-        messagebox.showinfo("Save Project", "Feature coming soon!")
-
-    def export_file(self, format): 
-        messagebox.showinfo("Export", f"Export as {format} coming soon!")
 
     def scan_profile(self): 
         for widget in self.root.root.winfo_children():

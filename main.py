@@ -29,11 +29,23 @@ def install_requirements():
         sys.exit(1)
 
 def main():
-    # Ensure pip and distutils are ready
     ensure_pip_installed()
     
-    # Install dependencies
-    install_requirements()
+    installed_packages = subprocess.check_output([sys.executable, '-m', 'pip', 'list']).decode('utf-8')
+    packages_to_check = ['opencv-python', 'numpy', 'pillow']
+    for package in packages_to_check:
+        if package in installed_packages:
+            print(f"{package} is installed")
+        else:
+            print(f'{package} Not installed')
+            install_requirements()
+            break
+
+    # Ensure pip and distutils are ready
+    # ensure_pip_installed()
+    
+    # # Install dependencies
+    # install_requirements()
 
     # Start the application
     import tkinter as tk
