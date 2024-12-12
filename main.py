@@ -32,7 +32,7 @@ def main():
     ensure_pip_installed()
     
     installed_packages = subprocess.check_output([sys.executable, '-m', 'pip', 'list']).decode('utf-8')
-    packages_to_check = ['opencv-python', 'numpy', 'pillow']
+    packages_to_check = ['opencv-python', 'numpy', 'Pillow', 'matplotlib', 'numpy-stl', 'trimesh', 'pygltflib']
     for package in packages_to_check:
         if package in installed_packages:
             print(f"{package} is installed")
