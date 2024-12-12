@@ -7,8 +7,9 @@ from config import *
 import os
 import cv2
 import threading
+from frontend.base_window import BaseWindow
 
-class ViewerWindow:
+class ViewerWindow(BaseWindow):
     def __init__(self, path, root ):
         self.root = root
         self.root.root.minsize(1920, 1080)
@@ -195,9 +196,6 @@ class ViewerWindow:
         self.root.root.configure(bg='white')
         self.root.root.protocol("WM_DELETE_WINDOW", self.on_closing)  # Handle window close event
 
-    # Handle window closing
-    def on_closing(self):
-        self.root.root.destroy()
 
     # Clear all images from the scrollable frame
     def clear_images(self):
@@ -443,46 +441,51 @@ class ViewerWindow:
         processor.apply_to_folder()
         self.all_points_to_img = processor.all_points
 
-    # Open an existing project directory
-    def open_project(self):
-        folder_path = filedialog.askdirectory(title="Select Folder")
+    def initialize_folder_processing(self, folder_path):
+        """Process the folder and perform additional operations specific to ViewerWindow."""
         folder_path_alg = folder_path + '_alg'
+        files, files_alg = self.get_file_lists(folder_path, folder_path_alg)
 
+        if files:
+            extension = self.get_file_extension(files)
+            self.pripona = extension
+            self.all_points_to_img = []
+            self.images_to_delete = []
+
+            error = False
+            if not os.path.exists(folder_path_alg) and len(files) != len(files_alg):
+                os.makedirs(folder_path_alg, exist_ok=True)
+                from backend.finding_line import LineDetection
+                processor = LineDetection(folder_path, folder_path_alg, 1, extension=extension)
+                processor.apply_to_folder()
+                self.all_points_to_img = processor.all_points
+
+                files_alg = [f for f in os.listdir(folder_path_alg) if os.path.isfile(os.path.join(folder_path_alg, f))]
+                if len(files) != len(files_alg):
+                    error = True
+
+            if not error:
+                self.clear_images()
+                self.add_to_scrollbar()
+            else:
+                messagebox.showerror("Processing Error", "An error occurred during processing. Images cannot be displayed.")
+
+    def get_file_lists(self, folder_path, folder_path_alg):
+        """Retrieve the list of files and algorithm files in the directories."""
         files = [f for f in os.listdir(folder_path) if os.path.isfile(os.path.join(folder_path, f))]
-
         try:
             if not os.path.exists(folder_path_alg):
                 files_alg = [f for f in os.listdir(folder_path_alg) if os.path.isfile(os.path.join(folder_path_alg, f))]
+            else:
+                files_alg = []
         except:
             files_alg = []
-
-        # Determine file extension from the first file
-        if files:
-            first_file = files[0]
-            extension = first_file.split('.')[-1]
-
-        self.pripona = extension
-        self.all_points_to_img = []
-        self.images_to_delete = []
-        # Process files if necessary
-        error = False
-        if not os.path.exists(folder_path_alg) and len(files) != len(files_alg):
-            os.makedirs(folder_path_alg, exist_ok=True)
-            from backend.finding_line import LineDetection
-            processor = LineDetection(folder_path, folder_path_alg, 1, extension=extension)
-            processor.apply_to_folder()
-            self.all_points_to_img = processor.all_points
-
-            files_alg = [f for f in os.listdir(folder_path_alg) if os.path.isfile(os.path.join(folder_path_alg, f))]
-            if len(files) != len(files_alg):
-                error = True
-
-        if not error:
-            self.path = folder_path
-            self.clear_images()
-            self.add_to_scrollbar()
-        else:
-            messagebox.showerror("Processing Error", "An error occurred during processing. Images cannot be displayed.")
+        return files, files_alg
+    
+    def get_file_extension(self, files):
+        """Extract file extension from the first file in the list."""
+        first_file = files[0]
+        return first_file.split('.')[-1]
 
     # Placeholder methods for features under development
 

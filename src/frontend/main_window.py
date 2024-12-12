@@ -10,8 +10,9 @@ from config import WINDOW_CONFIG
 from frontend.scanner import Scanner
 from frontend.viewer import ViewerWindow
 from frontend.model_3d import Model3D
+from frontend.base_window import BaseWindow
 
-class MainWindow:
+class MainWindow(BaseWindow):
     def __init__(self, root):
         self.root = root
         self.current_frame = None

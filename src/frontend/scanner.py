@@ -3,9 +3,10 @@ from threading import Thread
 import tkinter as tk
 from tkinter import Menu, messagebox
 from PIL import Image, ImageTk
+from frontend.base_window import BaseWindow
 
 
-class Scanner:
+class Scanner(BaseWindow):
     def __init__(self, main_window):
         self.main_window = main_window
         self.cap = None
@@ -173,11 +174,6 @@ class Scanner:
         self.main_window.root.destroy()
 
     # Dummy placeholder methods for menu items
-    def new_project(self): messagebox.showinfo("New Project", "Feature coming soon!")
-    def open_project(self): messagebox.showinfo("Open Project", "Feature coming soon!")
-    def save_project(self): messagebox.showinfo("Save Project", "Feature coming soon!")
-    def export_file(self, format): messagebox.showinfo("Export", f"Export as {format} coming soon!")
-    def scan_profile(self): messagebox.showinfo("Scan Profile", "Feature coming soon!")
     def browse_scans(self): messagebox.showinfo("Browse Scans", "Feature coming soon!")
     def calibration(self): messagebox.showinfo("Calibration", "Feature coming soon!")
     def start_scan(self): messagebox.showinfo("Start Scan", "Feature coming soon!")
