@@ -36,7 +36,7 @@ class ViewerWindow:
             files_alg = []
             
         # If processed files exist and match the count of originals, no generation is needed
-        if len(files_alg) > 0 and len(files) == len(files_alg):
+        if len(files_alg) > 0 and len(files) <= len(files_alg):
             return False
 
         return True
@@ -412,6 +412,7 @@ class ViewerWindow:
                 progress_var.set(i + 1)
                 progress_window.update_idletasks()
 
+            processor.write_points_to_file()
             self.all_points_to_img = processor.all_points
             progress_window.destroy()
 
