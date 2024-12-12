@@ -28,8 +28,28 @@ def install_requirements():
         print("requirements.txt not found. Please ensure it is in the same directory as main.py.")
         sys.exit(1)
 
+def force_uninstall_requirements():
+    """Force uninstall all packages listed in the requirements.txt file."""
+    requirements_file = os.path.join(os.path.dirname(__file__), "requirements.txt")
+    if os.path.exists(requirements_file):
+        print(f"Uninstalling all packages...")
+        try:
+            subprocess.check_call([sys.executable, '-m', 'pip', 'uninstall', '-r', 'requirements.txt', '-y'])
+            print(f"All packages have been uninstalled.")
+        except subprocess.CalledProcessError as e:
+            print(f"Failed to uninstall packages: {e}")
+    else:
+        print("requirements.txt not found. Please ensure it is in the same directory as main.py.")
+        sys.exit(1)
+
+def force_install_requirements():
+    """Force install all packages listed in the requirements.txt file."""
+    force_uninstall_requirements()
+    install_requirements()
+
 def main():
     ensure_pip_installed()
+    # force_install_requirements()
 
     try:
         with open('requirements.txt', 'r') as f:
