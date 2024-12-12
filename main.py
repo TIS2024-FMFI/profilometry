@@ -30,22 +30,23 @@ def install_requirements():
 
 def main():
     ensure_pip_installed()
-    
+
+    try:
+        with open('requirements.txt', 'r') as f:
+            packages_to_check = [line.strip().split('>=')[0] for line in f if line.strip() and not line.startswith('#')]
+    except FileNotFoundError:
+        print("requirements.txt not found. Please ensure the file exists.")
+        return
+
     installed_packages = subprocess.check_output([sys.executable, '-m', 'pip', 'list']).decode('utf-8')
-    packages_to_check = ['opencv-python', 'numpy', 'Pillow', 'matplotlib', 'numpy-stl', 'trimesh', 'pygltflib']
+
     for package in packages_to_check:
         if package in installed_packages:
             print(f"{package} is installed")
         else:
-            print(f'{package} Not installed')
+            print(f'{package} is NOT installed')
             install_requirements()
             break
-
-    # Ensure pip and distutils are ready
-    # ensure_pip_installed()
-    
-    # # Install dependencies
-    # install_requirements()
 
     # Start the application
     import tkinter as tk
