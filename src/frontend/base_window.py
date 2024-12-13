@@ -8,7 +8,6 @@ class BaseWindow:
     def __init__(self, root):
         self.root = root
         self.current_frame = None
-        self.setup_styles()
 
     def create_menu(self):
         """Setup the menu bar"""
