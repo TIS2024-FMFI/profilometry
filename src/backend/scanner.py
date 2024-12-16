@@ -16,9 +16,6 @@ class Scanner(BaseWindow):
         self.camera_index = self.detect_connected_camera()
         self.running = False
         self.scan_key = "space"  # Default key for scanning
-        super().__init__(main_window.root)
- 
-        
 
         # Setup menu and initialize interface
         self.create_menu()
@@ -359,7 +356,7 @@ class Scanner(BaseWindow):
     def calibration(self):
         """Otvorenie kalibračného dialógového okna pre projekt."""
         # Najprv skontrolujeme, či je projekt otvorený
-        if not hasattr(self, 'current_project') or not getattr(self, 'current_project', None):
+        if not hasattr(self, 'project_path') or not getattr(self, 'project_path', None):
             messagebox.showerror("Chyba", "Najprv otvorte alebo vytvorte projekt.")
             return
 
@@ -370,7 +367,7 @@ class Scanner(BaseWindow):
         calibration_dialog.resizable(False, False)
 
         # Kontrola existujúcej kalibrácie
-        calibration_path = os.path.join(self.current_project.project_dir, "calibration")
+        calibration_path = os.path.join(self.project_path, "calibration")
         
         # Premenné pre kalibráciu
         width_var = tk.StringVar()
@@ -487,6 +484,7 @@ class Scanner(BaseWindow):
 
                 # Zachytenie snímky z kamery
                 ret, frame = self.cap.read()
+                print(ret, frame)
                 if not ret:
                     messagebox.showerror("Chyba", "Nepodarilo sa zachytiť snímku.")
                     return False
@@ -516,9 +514,9 @@ class Scanner(BaseWindow):
                 # Uloženie kalibračných údajov
                 calibration_file = os.path.join(calibration_path, "calibration_data.txt")
                 with open(calibration_file, "w") as f:
-                    f.write(f"Width of the object: {width} mm\n")
-                    f.write(f"Height of the object: {height} mm\n")
-                    f.write(f"Number of calibration scans: {len(scanned_images)}\n")
+                    f.write(f"Šírka objektu: {width} mm\n")
+                    f.write(f"Výška objektu: {height} mm\n")
+                    f.write(f"Počet kalibračných snímok: {len(scanned_images)}\n")
 
                 messagebox.showinfo("Kalibrácia", "Kalibrácia úspešne dokončená.")
                 dialog.destroy()
@@ -536,4 +534,3 @@ class Scanner(BaseWindow):
 
         # Konfigurácia tlačidla
         scan_button.config(text="Zachytiť snímku", command=on_scan_click)
-        
