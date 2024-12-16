@@ -63,13 +63,48 @@ class Scanner:
         settings.add_command(label="Set Scan Key Bind", command=self.open_scan_key_dialog)
 
     def create_bottom_strip(self):
-        """Add a strip at the bottom with a Scan button."""
+        """Add a strip at the bottom with a Scan button and a Back button on the left."""
         bottom_frame = tk.Frame(self.main_window.root, bg="#eeeeee", pady=20)
         bottom_frame.pack(side=tk.BOTTOM, fill=tk.X)
-        self.scan_button = tk.Button(
-            bottom_frame, text="Scan (Default: Space)", command=self.start_scan, font=("Arial", 12)
+
+        # Back button on the left
+        self.back_button = tk.Button(
+            bottom_frame, text="Back", command=self.back_to_main_menu, font=("Arial", 12)
         )
-        self.scan_button.pack()
+        self.back_button.pack(side=tk.LEFT, padx=10)
+
+        # Scan button
+        self.scan_button = tk.Button(
+            bottom_frame, text="Scan", command=self.start_scan, font=("Arial", 12)
+        )
+        self.scan_button.pack(side=tk.LEFT, padx=10)
+
+        # Initial tooltip text
+        tooltip_text = "Space" if not self.scan_key else self.scan_key
+        self.create_tooltip(self.scan_button, tooltip_text)
+    def create_tooltip(self, widget, text):
+        """Create a tooltip using a Label that appears when the mouse hovers over the widget."""
+        tooltip = None
+
+        def show_tooltip(event):
+            """Show the tooltip when the mouse enters the widget."""
+            nonlocal tooltip
+            tooltip = tk.Toplevel(self.main_window.root)
+            tooltip.wm_overrideredirect(True)
+            x = event.x_root + 10
+            y = event.y_root - 10
+            tooltip.wm_geometry(f"+{x}+{y}")
+            
+            label = tk.Label(tooltip, text=text, background="yellow", relief="solid", borderwidth=1, font=("Arial", 10))
+            label.pack(padx=5, pady=5)
+
+        def hide_tooltip(event):
+            """Hide the tooltip when the mouse leaves the widget."""
+            if tooltip:
+                tooltip.destroy()
+
+        widget.bind("<Enter>", show_tooltip)
+        widget.bind("<Leave>", hide_tooltip)
 
     def open_scan_key_dialog(self):
         """Open a custom dialog to set the scan key."""
@@ -89,7 +124,12 @@ class Scanner:
             if len(key) == 1 and key.isalnum():
                 self.scan_key = key
                 self.main_window.root.bind(f"<{key}>", lambda event: self.start_scan())
-                self.scan_button.config(text=f"Scan (Current: {key})")
+                self.scan_button.config(text=f"Scan")
+
+                # Update the tooltip text dynamically
+                tooltip_text = self.scan_key
+                self.create_tooltip(self.scan_button, tooltip_text)
+
                 messagebox.showinfo("Key Binding", f"Scan key set to '{key}'.")
                 dialog.destroy()
             else:
@@ -97,6 +137,7 @@ class Scanner:
 
         submit_button = tk.Button(dialog, text="Set Key", font=("Arial", 12), command=on_submit)
         submit_button.pack(pady=10)
+
     def start_camera_view(self):
         """Initialize the camera view."""
         self.cap = cv2.VideoCapture(self.camera_index)
@@ -110,13 +151,20 @@ class Scanner:
         """Detect if a specific camera is connected, otherwise default to index 0."""
         connected_camera_id = "USB\\VID_32E4&PID_9320&MI_00\\7&29e53795&0&0000"
         for index in range(10):  # Check up to 10 possible cameras
-            cap = cv2.VideoCapture(index)
-            if cap.isOpened():
-                name = f"Camera {index}"  # Placeholder for camera identification logic
-                if connected_camera_id in name:  # Replace with actual identification logic if needed
+            try:
+                cap = cv2.VideoCapture(index)
+                if cap.isOpened():
+                    name = f"Camera {index}"  # Placeholder for camera identification logic
+                    if connected_camera_id in name:  # Replace with actual identification logic if needed
+                        cap.release()
+                        return index
                     cap.release()
-                    return index
-                cap.release()
+                else:
+                    cap.release()
+                    break
+            except Exception as e:
+                break
+
         return 0  # Default to the first camera if the specific one isn't found
 
     def choose_camera(self):
