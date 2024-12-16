@@ -10,7 +10,7 @@ class Scanner:
         self.main_window = main_window
         self.cap = None
         self.canvas = None
-        self.camera_index = 0
+        self.camera_index = self.detect_connected_camera()
         self.running = False
         self.scan_key = "space"  # Default key for scanning
 
@@ -104,6 +104,74 @@ class Scanner:
             return
 
         self.start_stream()
+    def detect_connected_camera(self):
+        """Detect if a specific camera is connected, otherwise default to index 0."""
+        connected_camera_id = "USB\\VID_32E4&PID_9320&MI_00\\7&29e53795&0&0000"
+        for index in range(10):  # Check up to 10 possible cameras
+            cap = cv2.VideoCapture(index)
+            if cap.isOpened():
+                name = f"Camera {index}"  # Placeholder for camera identification logic
+                if connected_camera_id in name:  # Replace with actual identification logic if needed
+                    cap.release()
+                    return index
+                cap.release()
+        return 0  # Default to the first camera if the specific one isn't found
+
+    def choose_camera(self):
+        """Open a pop-up window to choose a camera."""
+        dialog = tk.Toplevel(self.main_window.root)
+        dialog.title("Choose a Camera")
+        dialog.geometry("400x300")
+        dialog.resizable(False, False)
+
+        label = tk.Label(dialog, text="Select a camera from the list:", font=("Arial", 12))
+        label.pack(pady=10)
+
+        camera_list = ttk.Treeview(dialog, columns=("Index", "Name"), show="headings")
+        camera_list.heading("Index", text="Index")
+        camera_list.heading("Name", text="Name")
+        camera_list.column("Index", width=50, anchor="center")
+        camera_list.column("Name", width=300, anchor="w")
+        camera_list.pack(pady=10, fill=tk.BOTH, expand=True)
+
+        connected_camera_id = "USB\\VID_32E4&PID_9320&MI_00\\7&29e53795&0&0000"
+
+        # Populate the camera list
+        preselect_index = None
+        for index in range(10):
+            cap = cv2.VideoCapture(index)
+            if cap.isOpened():
+                name = f"Camera {index}"
+                # Add connected camera name if found
+                if connected_camera_id in name:
+                    name += " (Connected)"
+                    preselect_index = index
+                camera_list.insert("", "end", values=(index, name))
+                cap.release()
+
+        def on_select():
+            selected = camera_list.focus()
+            if not selected:
+                messagebox.showerror("Selection Error", "Please select a camera.")
+                return
+
+            values = camera_list.item(selected, "values")
+            self.camera_index = int(values[0])
+            messagebox.showinfo("Camera Selected", f"Selected Camera: {values[1]}")
+            dialog.destroy()
+
+        if preselect_index is not None:
+            for child in camera_list.get_children():
+                if camera_list.item(child, "values")[0] == str(preselect_index):
+                    camera_list.selection_set(child)
+                    break
+
+        select_button = tk.Button(dialog, text="Select", font=("Arial", 12), command=on_select)
+        select_button.pack(pady=10)
+
+        dialog.transient(self.main_window.root)
+        dialog.grab_set()
+        self.main_window.root.wait_window(dialog)
 
     def setup_camera_view(self):
         """Setup the canvas to display the camera feed."""
@@ -221,5 +289,4 @@ class Scanner:
     def start_scan(self): messagebox.showinfo("Start Scan", "Feature coming soon!")
     def stop_scan(self): messagebox.showinfo("Stop Scan", "Feature coming soon!")
     def save_scan(self): messagebox.showinfo("Save Scan", "Feature coming soon!")
-    def choose_camera(self): messagebox.showinfo("Choose Camera", "Feature coming soon!")
     def open_camera_settings(self): messagebox.showinfo("Camera Settings", "Feature coming soon!")
