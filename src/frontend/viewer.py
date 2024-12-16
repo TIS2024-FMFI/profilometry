@@ -282,8 +282,8 @@ class ViewerWindow(BaseWindow):
         self.Scan2Prewlbl.config(text="Scan " + photo[0] + " Adjusted")
 
         # Load and resize the original and adjusted images
-        original_image = Image.open(photo[1]).resize((300, 300))
-        adjusted_image = Image.open(photo[2]).resize((300, 300))
+        original_image = Image.open(photo[1]).resize((int(self.screen_width * 0.2), int(self.screen_height*0.35)))
+        adjusted_image = Image.open(photo[2]).resize((int(self.screen_width * 0.2), int(self.screen_height*0.35)))
         original_photo_image = ImageTk.PhotoImage(original_image)
         adjusted_photo_image = ImageTk.PhotoImage(adjusted_image)
         
