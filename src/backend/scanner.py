@@ -464,8 +464,7 @@ class Scanner:
         calibration_dialog.resizable(False, False)
 
         # Kontrola existujúcej kalibrácie
-        current_view = self._get_current_view()
-        calibration_path = os.path.join(self.project_path, "calibration", current_view)
+        calibration_path = os.path.join(self.project_path, "calibration")
         
         # Premenné pre kalibráciu
         width_var = tk.StringVar()
@@ -551,12 +550,6 @@ class Scanner:
             font=("Arial", 12)
         )
         scan_button.pack(pady=10)
-
-    def _get_current_view(self):
-        """Získanie aktuálneho pohľadu, ak je to možné."""
-        # Táto metóda by mala vrátiť jedinečný identifikátor aktuálneho pohľadu
-        # Napríklad view1, view2, atď. Pre teraz vrátime fixný view1
-        return "view1"
 
     def _cleanup_existing_calibration(self, calibration_path):
         """Vyčistenie existujúcich kalibračných súborov."""
