@@ -2,6 +2,7 @@ import tkinter as tk
 from tkinter import filedialog
 from tkinter import ttk
 from PIL import Image, ImageTk
+import tkinter.font as tkFont
 from tkinter import messagebox
 from config import *
 import os
@@ -12,11 +13,14 @@ from frontend.base_window import BaseWindow
 class ViewerWindow(BaseWindow):
     def __init__(self, path, root ):
         self.root = root
-        self.root.root.minsize(1920, 1080)
-        self.root.root.maxsize(1920, 1080)
         self.path = path
         self.all_points_to_img = []
         self.images_to_delete = []
+        self.screen_width = self.root.root.winfo_screenwidth()
+        self.screen_height = self.root.root.winfo_screenheight()
+        self.root.root.minsize(self.screen_width, self.screen_height)
+        self.root.root.maxsize(self.screen_width, self.screen_height)
+        
         self.pripona = 'png'  # File extension (e.g., png, jpg)
         LINE_DETECTION['significant_threshold_pixel'] = 80
         LINE_DETECTION['largest_points_threshold'] = 30
@@ -111,7 +115,7 @@ class ViewerWindow(BaseWindow):
     def setup_window(self):
         lbl = tk.Label(self.root.root, text="Scan List", font=('Arial 14')) 
         lbl.config(bg='white')
-        lbl.place(x=200, y=150)
+        lbl.place(relx=.14, rely=.2)
 
         # Back button
         def go_back():
@@ -174,8 +178,10 @@ class ViewerWindow(BaseWindow):
 
         # Highlight button on hover
 
-        def set_button(relx, rely, text, command):
-            button  = tk.Button(self.root.root, text=text, font=('Arial 14'), command=command)
+        def set_button(x, y, text, command):
+            font = tkFont.Font(family='Arial', size=14)
+            text_width = font.measure('Delete Selected    ')
+            button  = tk.Button(self.root.root, text=text, font=font, command=command)
             def on_enter(e):
                 button.configure(bg='#2980b9')
             
@@ -186,12 +192,14 @@ class ViewerWindow(BaseWindow):
             button.bind('<Enter>', on_enter)
             button.bind('<Leave>', on_leave)
             
-            button.place(relx=relx, rely=rely)
+            button.place(x=x, rely=y, width=text_width)
 
-        set_button(.013,.8, 'Back', go_back)
-        set_button(.1,.8, 'Show2D', show2d)
-        set_button(.2,.8, 'Delete Selected', delete_input_box2)
-        set_button(.2,.87, 'Delete Interval', delete_input_box1)
+        font = tkFont.Font(family='Arial', size=14)
+        text_width = font.measure('Delete Selected    ')
+        set_button(int(self.screen_width * .013), .8, 'Back', go_back)
+        set_button(int(self.screen_width * .115)+50,.8, 'Show2D', show2d)
+        set_button(int(self.screen_width * .218)+100,.8, 'Delete Selected', delete_input_box2)
+        set_button(int(self.screen_width * .218)+100,.852, 'Delete Interval', delete_input_box1)
         
         self.root.root.state('zoomed')  # Maximize the window
         self.root.root.configure(bg='white')
@@ -337,25 +345,25 @@ class ViewerWindow(BaseWindow):
         
         # Add labels for preview sections
         self.Scan1Prewlbl = tk.Label(self.root.root, text="Scan 1 Preview", font=('Arial 14'))  # Original preview
-        self.Scan1Prewlbl.place(x=700, y=200)
+        self.Scan1Prewlbl.place(x=int(.5 * self.screen_width), y=int(.2 * self.screen_height), anchor='center')
 
         self.Scan2Prewlbl = tk.Label(self.root.root, text="Scan 1 Adjusted", font=('Arial 14'))  # Adjusted image preview
-        self.Scan2Prewlbl.place(x=700, y=550)
+        self.Scan2Prewlbl.place(x=int(.5 * self.screen_width), y=int(.7 * self.screen_height), anchor='center' )
 
         # Place scrollable frame inside the canvas
         self.canvasScrollFrame.create_window((0, 0), window=self.scrollable_frame, anchor="nw")
 
         # Pack the scrollbar and canvas
-        self.scrollbar.pack(side="right", fill="y")
-        self.canvasScrollFrame.pack(side="left", fill="both", expand=True)
-        self.scrollFrame.pack(side="left", padx=20, pady=0)
+        self.scrollbar.place(relx=.5, rely=0.0, relheight=.5, anchor='ne')
+        self.canvasScrollFrame.place(relx=0.0, rely=0.0, relwidth=.5, relheight=.5, anchor='nw')
+        self.scrollFrame.place(relx=0.0, rely=0.25, relwidth=.7, relheight=1., anchor='nw')
 
         # Add placeholders for preview images
         self.image_labelPrew = tk.Label(self.root.root)
-        self.image_labelPrew.pack(padx=20, pady=40)
+        self.image_labelPrew.place(x = int(0.58 * self.screen_width), y = int(0.1*self.screen_height))
 
         self.image_labelAlg = tk.Label(self.root.root)
-        self.image_labelAlg.pack(padx=20, pady=40)
+        self.image_labelAlg.place(x = int(0.58 * self.screen_width), y = int(0.5*self.screen_height))
 
         # Populate the scrollbar with image labels
         self.add_to_scrollbar()
