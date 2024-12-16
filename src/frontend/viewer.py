@@ -178,6 +178,8 @@ class ViewerWindow(BaseWindow):
 
         # Highlight button on hover
 
+        self.buttons = []
+        
         def set_button(x, y, text, command):
             font = tkFont.Font(family='Arial', size=14)
             text_width = font.measure('Delete Selected    ')
@@ -193,13 +195,19 @@ class ViewerWindow(BaseWindow):
             button.bind('<Leave>', on_leave)
             
             button.place(x=x, rely=y, width=text_width)
+            
+            self.buttons.append(button)
+            
+            return button
+            
+            
 
         font = tkFont.Font(family='Arial', size=14)
         text_width = font.measure('Delete Selected    ')
-        set_button(int(self.screen_width * .013), .8, 'Back', go_back)
-        set_button(int(self.screen_width * .115)+50,.8, 'Show2D', show2d)
-        set_button(int(self.screen_width * .218)+100,.8, 'Delete Selected', delete_input_box2)
-        set_button(int(self.screen_width * .218)+100,.852, 'Delete Interval', delete_input_box1)
+        self.b1 = set_button(int(self.screen_width * .013), .8, 'Back', go_back)
+        self.b2 = set_button(int(self.screen_width * .115)+50,.8, 'Show2D', show2d)
+        self.b3 = set_button(int(self.screen_width * .218)+100,.8, 'Delete Selected', delete_input_box2)
+        self.b4 = set_button(int(self.screen_width * .218)+100,.852, 'Delete Interval', delete_input_box1)
         
         self.root.root.state('zoomed')  # Maximize the window
         self.root.root.configure(bg='white')
@@ -377,7 +385,7 @@ class ViewerWindow(BaseWindow):
 
     def use_algorithm_image_by_image(self):
         try:
-            for widget in self.root.root.winfo_children():
+            for widget in self.scrollable_frame.winfo_children():
                 widget.destroy()
         except:
             pass
@@ -429,9 +437,9 @@ class ViewerWindow(BaseWindow):
             if thread.is_alive():
                 self.root.root.after(100, check_thread)
             else:
-                self.setup_window()  # Initialize the main window layout
                 self.create_menu()  # Create the menu bar
                 self.add_images() # Add images to Scrollbar
+                self.setup_window()  # Initialize the main window layout
 
         check_thread()
 
