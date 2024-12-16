@@ -1,7 +1,7 @@
 import cv2
 from threading import Thread
 import tkinter as tk
-from tkinter import Menu, messagebox
+from tkinter import Menu, messagebox, ttk
 from PIL import Image, ImageTk
 
 
@@ -121,10 +121,10 @@ class Scanner:
         """Open a pop-up window to choose a camera."""
         dialog = tk.Toplevel(self.main_window.root)
         dialog.title("Choose a Camera")
-        dialog.geometry("400x300")
+        dialog.geometry("600x500")
         dialog.resizable(False, False)
 
-        label = tk.Label(dialog, text="Select a camera from the list:", font=("Arial", 12))
+        label = tk.Label(dialog, text="Detecting cameras, please wait...", font=("Arial", 12))
         label.pack(pady=10)
 
         camera_list = ttk.Treeview(dialog, columns=("Index", "Name"), show="headings")
@@ -134,44 +134,60 @@ class Scanner:
         camera_list.column("Name", width=300, anchor="w")
         camera_list.pack(pady=10, fill=tk.BOTH, expand=True)
 
-        connected_camera_id = "USB\\VID_32E4&PID_9320&MI_00\\7&29e53795&0&0000"
+        select_button = tk.Button(dialog, text="Select", font=("Arial", 12), state=tk.DISABLED, command=lambda: self.on_camera_select(camera_list, dialog))
+        select_button.pack(pady=10)
 
-        # Populate the camera list
-        preselect_index = None
-        for index in range(10):
-            cap = cv2.VideoCapture(index)
-            if cap.isOpened():
-                name = f"Camera {index}"
-                # Add connected camera name if found
-                if connected_camera_id in name:
-                    name += " (Connected)"
-                    preselect_index = index
-                camera_list.insert("", "end", values=(index, name))
-                cap.release()
+        def detect_cameras():
+            connected_camera_id = "USB\\VID_32E4&PID_9320&MI_00\\7&29e53795&0&0000"
+            preselect_index = None
 
-        def on_select():
-            selected = camera_list.focus()
-            if not selected:
-                messagebox.showerror("Selection Error", "Please select a camera.")
-                return
+            for index in range(10):
+                try:
+                    cap = cv2.VideoCapture(index)
+                    if cap.isOpened():
+                        name = f"Camera {index}"
+                        if connected_camera_id in name:
+                            name += " (Connected)"
+                            preselect_index = index
 
-            values = camera_list.item(selected, "values")
-            self.camera_index = int(values[0])
-            messagebox.showinfo("Camera Selected", f"Selected Camera: {values[1]}")
-            dialog.destroy()
-
-        if preselect_index is not None:
-            for child in camera_list.get_children():
-                if camera_list.item(child, "values")[0] == str(preselect_index):
-                    camera_list.selection_set(child)
+                        # Update the UI with the detected camera
+                        camera_list.insert("", "end", values=(index, name))
+                        cap.release()
+                    else:
+                        cap.release()
+                        break
+                except Exception as e:
                     break
 
-        select_button = tk.Button(dialog, text="Select", font=("Arial", 12), command=on_select)
-        select_button.pack(pady=10)
+            # Preselect the connected camera if found
+            if preselect_index is not None:
+                for child in camera_list.get_children():
+                    if camera_list.item(child, "values")[0] == str(preselect_index):
+                        camera_list.selection_set(child)
+                        break
+
+            # Enable the Select button and update the label
+            select_button.config(state=tk.NORMAL)
+            label.config(text="Select a camera from the list:")
+
+        # Start the detection thread
+        Thread(target=detect_cameras, daemon=True).start()
 
         dialog.transient(self.main_window.root)
         dialog.grab_set()
         self.main_window.root.wait_window(dialog)
+
+    def on_camera_select(self, camera_list, dialog):
+        """Handle camera selection."""
+        selected = camera_list.focus()
+        if not selected:
+            messagebox.showerror("Selection Error", "Please select a camera.")
+            return
+
+        values = camera_list.item(selected, "values")
+        self.camera_index = int(values[0])
+        messagebox.showinfo("Camera Selected", f"Selected Camera: {values[1]}")
+        dialog.destroy()
 
     def setup_camera_view(self):
         """Setup the canvas to display the camera feed."""
