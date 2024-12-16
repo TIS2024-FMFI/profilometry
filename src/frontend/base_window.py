@@ -74,3 +74,5 @@ class BaseWindow:
     # Handle window closing
     def on_closing(self):
         self.root.root.destroy()
+    def get_current_project(self):
+        return self.current_project

@@ -5,9 +5,10 @@ from tkinter import Menu, messagebox, ttk, filedialog, simpledialog
 from PIL import Image, ImageTk
 import os
 import json
+from frontend.base_window import BaseWindow
 
 
-class Scanner:
+class Scanner(BaseWindow):
     def __init__(self, main_window):
         self.main_window = main_window
         self.cap = None
@@ -344,105 +345,7 @@ class Scanner:
         self.stop_stream()
         self.main_window.root.destroy()
 
-    # Dummy placeholder methods for menu items
-    def new_project(self):
-        """Create a new project folder structure."""
-        project_path = filedialog.askdirectory(title="Select Location for New Project")
-        if not project_path:
-            return
-
-        project_name = simpledialog.askstring("Project Name", "Enter the name of the new project:")
-        if not project_name:
-            messagebox.showwarning("Invalid Input", "Project name cannot be empty.")
-            return
-
-        self.project_path = os.path.join(project_path, project_name)
-
-        try:
-            # Create project folder structure
-            os.makedirs(self.project_path, exist_ok=True)
-            os.makedirs(os.path.join(self.project_path, "scans"), exist_ok=True)
-            os.makedirs(os.path.join(self.project_path, "calibration"), exist_ok=True)
-            os.makedirs(os.path.join(self.project_path, "movement_parameters"), exist_ok=True)
-
-            # Create placeholder files
-            with open(os.path.join(self.project_path, "project_summary.txt"), "w") as f:
-                f.write("Project Summary\n")
-
-            messagebox.showinfo("New Project", f"New project '{project_name}' created at {self.project_path}.")
-        except Exception as e:
-            messagebox.showerror("Error", f"Failed to create project: {e}")
-
-    def open_project(self):
-        """Open an existing project folder."""
-        self.project_path = filedialog.askdirectory(title="Select Project Folder")
-        if not self.project_path:
-            return
-
-        try:
-            # Check for required subfolders
-            required_folders = ["movement_parameters", "calibration", "scans"]
-            missing_folders = [folder for folder in required_folders if not os.path.exists(os.path.join(self.project_path, folder))]
-            
-            if missing_folders:
-                raise FileNotFoundError(f"The selected folder is missing required subfolders: {', '.join(missing_folders)}.")
-
-            # Load project summary
-            summary_file = os.path.join(self.project_path, "project_summary.txt")
-            if not os.path.exists(summary_file):
-                raise FileNotFoundError("The selected folder does not contain a valid project.")
-
-            with open(summary_file, "r") as f:
-                summary = f.read()
-
-            messagebox.showinfo("Open Project", f"Project loaded successfully from {self.project_path}.")
-        except Exception as e:
-            messagebox.showerror("Error", f"Failed to open project: {e}")
-
-
-    def save_project(self):
-        """Save the current project to a specified location with a new name."""
-        # Ask user where they want to save the project
-        save_location = filedialog.askdirectory(title="Select Location to Save Project")
-        if not save_location:
-            return
-
-        # Ask for the project name
-        project_name = simpledialog.askstring("Project Name", "Enter the name of the project to save:")
-        if not project_name:
-            messagebox.showwarning("Invalid Input", "Project name cannot be empty.")
-            return
-
-        # Define the project save path
-        self.project_path = os.path.join(save_location, project_name)
-
-        try:
-            # Check if the project already exists
-            if os.path.exists(self.project_path):
-                if messagebox.askyesno("Project Exists", f"The project '{project_name}' already exists. Do you want to overwrite it?"):
-                    self._create_project_folder_structure(self.project_path)
-                else:
-                    return
-            else:
-                self._create_project_folder_structure()
-            
-            messagebox.showinfo("Project Saved", f"Project '{project_name}' saved at {self.project_path}")
-
-        except Exception as e:
-            messagebox.showerror("Error", f"An error occurred while saving the project: {str(e)}")
-
-    def _create_project_folder_structure(self):
-        """Create the necessary folder structure for the project."""
-        os.makedirs(self.project_path, exist_ok=True)
-        os.makedirs(os.path.join(self.project_path, "scans"), exist_ok=True)
-        os.makedirs(os.path.join(self.project_path, "calibration"), exist_ok=True)
-        os.makedirs(os.path.join(self.project_path, "movement_parameters"), exist_ok=True)
-
-        # Create placeholder files
-        with open(os.path.join(self.project_path, "project_summary.txt"), "w") as f:
-            f.write("Project Summary\n")
-
-            
+    # Dummy placeholder methods for menu items            
     def export_file(self, format): messagebox.showinfo("Export", f"Export as {format} coming soon!")
     def scan_profile(self): messagebox.showinfo("Scan Profile", "Feature coming soon!")
     def browse_scans(self): messagebox.showinfo("Browse Scans", "Feature coming soon!")
