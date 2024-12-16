@@ -356,46 +356,46 @@ class Scanner:
             messagebox.showwarning("Invalid Input", "Project name cannot be empty.")
             return
 
-        new_project_path = os.path.join(project_path, project_name)
+        self.project_path = os.path.join(project_path, project_name)
 
         try:
             # Create project folder structure
-            os.makedirs(new_project_path, exist_ok=True)
-            os.makedirs(os.path.join(new_project_path, "scans"), exist_ok=True)
-            os.makedirs(os.path.join(new_project_path, "calibration"), exist_ok=True)
-            os.makedirs(os.path.join(new_project_path, "movement_parameters"), exist_ok=True)
+            os.makedirs(self.project_path, exist_ok=True)
+            os.makedirs(os.path.join(self.project_path, "scans"), exist_ok=True)
+            os.makedirs(os.path.join(self.project_path, "calibration"), exist_ok=True)
+            os.makedirs(os.path.join(self.project_path, "movement_parameters"), exist_ok=True)
 
             # Create placeholder files
-            with open(os.path.join(new_project_path, "project_summary.txt"), "w") as f:
+            with open(os.path.join(self.project_path, "project_summary.txt"), "w") as f:
                 f.write("Project Summary\n")
 
-            messagebox.showinfo("New Project", f"New project '{project_name}' created at {new_project_path}.")
+            messagebox.showinfo("New Project", f"New project '{project_name}' created at {self.project_path}.")
         except Exception as e:
             messagebox.showerror("Error", f"Failed to create project: {e}")
 
     def open_project(self):
         """Open an existing project folder."""
-        project_path = filedialog.askdirectory(title="Select Project Folder")
-        if not project_path:
+        self.project_path = filedialog.askdirectory(title="Select Project Folder")
+        if not self.project_path:
             return
 
         try:
             # Check for required subfolders
             required_folders = ["movement_parameters", "calibration", "scans"]
-            missing_folders = [folder for folder in required_folders if not os.path.exists(os.path.join(project_path, folder))]
+            missing_folders = [folder for folder in required_folders if not os.path.exists(os.path.join(self.project_path, folder))]
             
             if missing_folders:
                 raise FileNotFoundError(f"The selected folder is missing required subfolders: {', '.join(missing_folders)}.")
 
             # Load project summary
-            summary_file = os.path.join(project_path, "project_summary.txt")
+            summary_file = os.path.join(self.project_path, "project_summary.txt")
             if not os.path.exists(summary_file):
                 raise FileNotFoundError("The selected folder does not contain a valid project.")
 
             with open(summary_file, "r") as f:
                 summary = f.read()
 
-            messagebox.showinfo("Open Project", f"Project loaded successfully from {project_path}.")
+            messagebox.showinfo("Open Project", f"Project loaded successfully from {self.project_path}.")
         except Exception as e:
             messagebox.showerror("Error", f"Failed to open project: {e}")
 
@@ -414,40 +414,227 @@ class Scanner:
             return
 
         # Define the project save path
-        project_save_path = os.path.join(save_location, project_name)
+        self.project_path = os.path.join(save_location, project_name)
 
         try:
             # Check if the project already exists
-            if os.path.exists(project_save_path):
+            if os.path.exists(self.project_path):
                 if messagebox.askyesno("Project Exists", f"The project '{project_name}' already exists. Do you want to overwrite it?"):
-                    self._create_project_folder_structure(project_save_path)
+                    self._create_project_folder_structure(self.project_path)
                 else:
                     return
             else:
-                self._create_project_folder_structure(project_save_path)
+                self._create_project_folder_structure()
             
-            messagebox.showinfo("Project Saved", f"Project '{project_name}' saved at {project_save_path}")
+            messagebox.showinfo("Project Saved", f"Project '{project_name}' saved at {self.project_path}")
 
         except Exception as e:
             messagebox.showerror("Error", f"An error occurred while saving the project: {str(e)}")
 
-    def _create_project_folder_structure(self, project_path):
+    def _create_project_folder_structure(self):
         """Create the necessary folder structure for the project."""
-        os.makedirs(project_path, exist_ok=True)
-        os.makedirs(os.path.join(project_path, "scans"), exist_ok=True)
-        os.makedirs(os.path.join(project_path, "calibration"), exist_ok=True)
-        os.makedirs(os.path.join(project_path, "movement_parameters"), exist_ok=True)
+        os.makedirs(self.project_path, exist_ok=True)
+        os.makedirs(os.path.join(self.project_path, "scans"), exist_ok=True)
+        os.makedirs(os.path.join(self.project_path, "calibration"), exist_ok=True)
+        os.makedirs(os.path.join(self.project_path, "movement_parameters"), exist_ok=True)
 
         # Create placeholder files
-        with open(os.path.join(project_path, "project_summary.txt"), "w") as f:
+        with open(os.path.join(self.project_path, "project_summary.txt"), "w") as f:
             f.write("Project Summary\n")
 
             
     def export_file(self, format): messagebox.showinfo("Export", f"Export as {format} coming soon!")
     def scan_profile(self): messagebox.showinfo("Scan Profile", "Feature coming soon!")
     def browse_scans(self): messagebox.showinfo("Browse Scans", "Feature coming soon!")
-    def calibration(self): messagebox.showinfo("Calibration", "Feature coming soon!")
     def start_scan(self): messagebox.showinfo("Start Scan", "Feature coming soon!")
     def stop_scan(self): messagebox.showinfo("Stop Scan", "Feature coming soon!")
     def save_scan(self): messagebox.showinfo("Save Scan", "Feature coming soon!")
     def open_camera_settings(self): messagebox.showinfo("Camera Settings", "Feature coming soon!")
+    def calibration(self):
+        """Otvorenie kalibračného dialógového okna pre projekt."""
+        # Najprv skontrolujeme, či je projekt otvorený
+        if not hasattr(self, 'project_path') or not getattr(self, 'project_path', None):
+            messagebox.showerror("Chyba", "Najprv otvorte alebo vytvorte projekt.")
+            return
+
+        # Dialógové okno pre kalibráciu
+        calibration_dialog = tk.Toplevel(self.main_window.root)
+        calibration_dialog.title("Kalibrácia")
+        calibration_dialog.geometry("500x600")
+        calibration_dialog.resizable(False, False)
+
+        # Kontrola existujúcej kalibrácie
+        current_view = self._get_current_view()
+        calibration_path = os.path.join(self.project_path, "calibration", current_view)
+        
+        # Premenné pre kalibráciu
+        width_var = tk.StringVar()
+        height_var = tk.StringVar()
+        scanned_images = []
+        
+        # Kontrola existujúcej kalibrácie
+        def check_existing_calibration():
+            calibration_file = os.path.join(calibration_path, "calibration_data.txt")
+            if os.path.exists(calibration_file):
+                response = messagebox.askyesno(
+                    "Existujúca kalibrácia", 
+                    "Pre tento pohľad už existuje kalibrácia. Chcete zmazať existujúce skeny a vytvoriť novú kalibráciu?"
+                )
+                if response:
+                    # Zmazanie existujúcich kalibračných súborov
+                    self._cleanup_existing_calibration(calibration_path)
+                    return True
+                return False
+            return True
+
+        # Funkcia pre začatie skenovania
+        def start_calibration_scan():
+            # Validácia rozmerov
+            try:
+                width = float(width_var.get())
+                height = float(height_var.get())
+                
+                if width <= 0 or height <= 0:
+                    messagebox.showerror("Chyba", "Rozmery musia byť kladné čísla.")
+                    return
+            except ValueError:
+                messagebox.showerror("Chyba", "Zadajte platné numerické hodnoty pre šírku a výšku.")
+                return
+
+            # Kontrola existujúcej kalibrácie
+            if not check_existing_calibration():
+                return
+
+            # Vytvorenie adresárov pre kalibráciu
+            os.makedirs(os.path.join(calibration_path, "raw"), exist_ok=True)
+            os.makedirs(os.path.join(calibration_path, "processed"), exist_ok=True)
+
+            # Spustenie skenovania
+            self._run_calibration_scan(
+                calibration_path, 
+                width, 
+                height, 
+                scanned_images, 
+                progress_bar, 
+                scan_button, 
+                calibration_dialog
+            )
+
+        # Rozloženie widgetov
+        tk.Label(calibration_dialog, text="Kalibrácia", font=("Arial", 16, "bold")).pack(pady=10)
+        
+        # Rámček pre rozmery
+        dimension_frame = tk.Frame(calibration_dialog)
+        dimension_frame.pack(pady=20)
+
+        tk.Label(dimension_frame, text="Šírka kalibračného objektu (mm):", font=("Arial", 12)).grid(row=0, column=0, padx=5, pady=5)
+        tk.Entry(dimension_frame, textvariable=width_var, font=("Arial", 12), width=10).grid(row=0, column=1, padx=5, pady=5)
+
+        tk.Label(dimension_frame, text="Výška kalibračného objektu (mm):", font=("Arial", 12)).grid(row=1, column=0, padx=5, pady=5)
+        tk.Entry(dimension_frame, textvariable=height_var, font=("Arial", 12), width=10).grid(row=1, column=1, padx=5, pady=5)
+
+        # Progres bar
+        progress_bar = ttk.Progressbar(
+            calibration_dialog, 
+            orient="horizontal", 
+            length=400, 
+            mode="determinate", 
+            maximum=5
+        )
+        progress_bar.pack(pady=20)
+
+        # Tlačidlo skenovania
+        scan_button = tk.Button(
+            calibration_dialog, 
+            text="Spustiť kalibráciu", 
+            command=start_calibration_scan, 
+            font=("Arial", 12)
+        )
+        scan_button.pack(pady=10)
+
+    def _get_current_view(self):
+        """Získanie aktuálneho pohľadu, ak je to možné."""
+        # Táto metóda by mala vrátiť jedinečný identifikátor aktuálneho pohľadu
+        # Napríklad view1, view2, atď. Pre teraz vrátime fixný view1
+        return "view1"
+
+    def _cleanup_existing_calibration(self, calibration_path):
+        """Vyčistenie existujúcich kalibračných súborov."""
+        try:
+            # Zmazanie raw a processed adresárov
+            raw_path = os.path.join(calibration_path, "raw")
+            processed_path = os.path.join(calibration_path, "processed")
+            calibration_file = os.path.join(calibration_path, "calibration_data.txt")
+
+            # Odstránenie súborov
+            for path in [raw_path, processed_path]:
+                if os.path.exists(path):
+                    for file in os.listdir(path):
+                        os.remove(os.path.join(path, file))
+
+            # Odstránenie kalibračného súboru
+            if os.path.exists(calibration_file):
+                os.remove(calibration_file)
+        except Exception as e:
+            messagebox.showerror("Chyba", f"Nepodarilo sa vyčistiť existujúcu kalibráciu: {e}")
+
+    def _run_calibration_scan(self, calibration_path, width, height, scanned_images, progress_bar, scan_button, dialog):
+        """Spustenie kalibračného skenovania."""
+        def capture_calibration_image():
+            """Zachytenie jednej kalibračnej snímky."""
+            try:
+                # Zastavenie aktuálneho streamovania
+                #self.stop_stream()
+
+                # Zachytenie snímky z kamery
+                ret, frame = self.cap.read()
+                print(ret, frame)
+                if not ret:
+                    messagebox.showerror("Chyba", "Nepodarilo sa zachytiť snímku.")
+                    return False
+
+                # Uloženie snímky do raw adresára
+                filename = f"cal_scan_{len(scanned_images) + 1}.png"
+                filepath = os.path.join(calibration_path, "raw", filename)
+                cv2.imwrite(filepath, frame)
+
+                # Pridanie do zoznamu
+                scanned_images.append(filepath)
+
+                # Aktualizácia progress baru
+                progress_bar['value'] = len(scanned_images)
+
+                # Reštart streamovania
+                #self.start_stream()
+
+                return True
+            except Exception as e:
+                messagebox.showerror("Chyba", f"Chyba pri snímaní: {e}")
+                return False
+
+        def finalize_calibration():
+            """Finalizácia kalibračného procesu."""
+            if len(scanned_images) == 5:
+                # Uloženie kalibračných údajov
+                calibration_file = os.path.join(calibration_path, "calibration_data.txt")
+                with open(calibration_file, "w") as f:
+                    f.write(f"Šírka objektu: {width} mm\n")
+                    f.write(f"Výška objektu: {height} mm\n")
+                    f.write(f"Počet kalibračných snímok: {len(scanned_images)}\n")
+
+                messagebox.showinfo("Kalibrácia", "Kalibrácia úspešne dokončená.")
+                dialog.destroy()
+            else:
+                messagebox.showwarning("Nedokončená kalibrácia", "Je potrebné zachytiť 5 snímok.")
+
+        def on_scan_click():
+            """Obsluha kliknutia na skenovanie."""
+            if len(scanned_images) < 5:
+                if capture_calibration_image():
+                    if len(scanned_images) == 5:
+                        scan_button.config(text="Dokončiť kalibráciu", command=finalize_calibration)
+            else:
+                finalize_calibration()
+
+        # Konfigurácia tlačidla
+        scan_button.config(text="Zachytiť snímku", command=on_scan_click)
