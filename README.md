@@ -14,6 +14,7 @@ The following Python libraries are required:
 - `opencv-python>=4.5.0`
 - `numpy>=1.19.0`
 - `Pillow>=8.0.0`
+- `matplotlib>=3.3.0`
 
 These are listed in the `requirements.txt` file and will be automatically installed when running the application.
 

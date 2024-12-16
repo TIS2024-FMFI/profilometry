@@ -14,3 +14,8 @@ BUTTON_CONFIG = {
     'padding': 10,             # Padding around buttons
     'font': ('Arial', 11)      # Font style for buttons
 }
+
+LINE_DETECTION = {
+    'significant_threshold_pixel': 80,  # Minimum intensity to consider a pixel significant
+    'largest_points_threshold': 30      # Maximum allowed deviation from the reference line
+}
