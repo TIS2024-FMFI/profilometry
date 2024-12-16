@@ -26,13 +26,14 @@ class ViewerWindow(BaseWindow):
             self.setup_window()  # Initialize the main window layout
             self.create_menu()  # Create the menu bar
         else:
+            print("TREBA")
             self.use_algorithm_image_by_image()  # Run the algorithm if needed
 
     # Check if the algorithm needs to generate processed files
     def check_needs_generation(self):
-        files = [f for f in os.listdir(self.path) if os.path.isfile(os.path.join(self.path, f))]
+        files = [f for f in os.listdir(self.path+"/scans/raw") if os.path.isfile(os.path.join(self.path+"/scans/raw", f))]
         try:
-            files_alg = [f for f in os.listdir(self.path + "_alg") if os.path.isfile(os.path.join(self.path + "_alg", f))]
+            files_alg = [f for f in os.listdir(self.path + "/scans/processed") if os.path.isfile(os.path.join(self.path + "/scans/processed", f))]
         except:
             files_alg = []
             
@@ -122,7 +123,7 @@ class ViewerWindow(BaseWindow):
             
         def show2d():
             from backend.finding_line import LineDetection
-            ld = LineDetection(self.path , self.path + '_alg', constant=1, extension= self.pripona)
+            ld = LineDetection(self.path+'/scans/raw' , self.path + '/scans/processed', constant=1, extension= self.pripona)
             if len(self.all_points_to_img) > 1:
                 ld.all_points = self.all_points_to_img
             else:
@@ -207,21 +208,23 @@ class ViewerWindow(BaseWindow):
         first_image = None
         count = 0
         self.scrollbar_images = []
-
-        for filename in os.listdir(self.path):
+        
+        for filename in os.listdir(self.path+'/scans/raw'):
             if filename.endswith("." + self.pripona):  # Check for correct file extension
                 file_path = os.path.join(self.path, filename)
-                if first_image is None:
-                    first_image = str(count + 1) + "|" + file_path  # Store first image for preview
 
                 label = tk.Label(self.scrollable_frame, text=str(count + 1) + '. SCAN', font=("Arial 14"))
                 
 
                 split_path = file_path.split('\\')
-                split_path[0] += '_alg\\'
+                new_file_path = split_path[0] +'/scans/raw\\' + split_path[1]
+                split_path[0] += '/scans/processed\\'
                 processed_image_path = split_path[0] + split_path[1]
+                #print(new_file_path, " ---- " , processed_image_path)
+                self.scrollbar_images.append((new_file_path, processed_image_path))
                 
-                self.scrollbar_images.append((file_path, processed_image_path))
+                if first_image is None:
+                    first_image = [str(count+1), new_file_path, processed_image_path]
                 
                 label.pack(padx=170, pady=10)
                 label.config(bg="white")
@@ -249,7 +252,7 @@ class ViewerWindow(BaseWindow):
                 label.bind("<Leave>", lambda event, label=label: on_hover_leave(event, label))
 
                 # Set up click event for each label
-                label.bind("<Button-1>", lambda event, name=str(count) + '|' + file_path: self.on_item_click(name))
+                label.bind("<Button-1>", lambda event, name=[str(count), new_file_path , processed_image_path], : self.on_item_click(name))
                 label.bind("<Button-3>", lambda event, label=label: on_right_click(event, label))
                 
                 label.bind("<MouseWheel>", self.on_mouse_wheel)
@@ -260,35 +263,30 @@ class ViewerWindow(BaseWindow):
                 self.scrollable_frame.bind("<Button-4>", self.on_mouse_wheel)
                 self.scrollable_frame.bind("<Button-5>", self.on_mouse_wheel)
 
-        if first_image:
+
+        if first_image and len(self.scrollbar_images) > 0:
             self.on_item_click(first_image)
 
     # Display preview and adjusted images on item click
     def on_item_click(self, photo):
-        count, photo = photo.split('|')
-
-        split_path = photo.split('\\')
-        split_path[0] += '_alg\\'
-        processed_image_path = split_path[0] + split_path[1]
-
         # Update labels for preview and adjusted images
-        self.Scan1Prewlbl.config(text="Scan " + count + " Preview")
-        self.Scan2Prewlbl.config(text="Scan " + count + " Adjusted")
+        self.Scan1Prewlbl.config(text="Scan " + photo[0] + " Preview")
+        self.Scan2Prewlbl.config(text="Scan " + photo[0] + " Adjusted")
 
         # Load and resize the original and adjusted images
-        original_image = Image.open(photo).resize((300, 300))
-        adjusted_image = Image.open(processed_image_path).resize((300, 300))
+        original_image = Image.open(photo[1]).resize((300, 300))
+        adjusted_image = Image.open(photo[2]).resize((300, 300))
         original_photo_image = ImageTk.PhotoImage(original_image)
         adjusted_photo_image = ImageTk.PhotoImage(adjusted_image)
         
         # Update image labels
         self.image_labelPrew.config(image=original_photo_image)
         self.image_labelPrew.image = original_photo_image
-        self.image_labelPrew.image_path = photo
+        self.image_labelPrew.image_path = photo[1]
 
         self.image_labelAlg.config(image=adjusted_photo_image)
         self.image_labelAlg.image = adjusted_photo_image
-        self.image_labelAlg.image_path = processed_image_path
+        self.image_labelAlg.image_path = photo[2]
         
         self.image_labelPrew.bind("<Button-1>", lambda event: self.show_fullscreen(event, self.image_labelPrew))
         self.image_labelAlg.bind("<Button-1>", lambda event: self.show_fullscreen(event, self.image_labelAlg))
@@ -377,13 +375,13 @@ class ViewerWindow(BaseWindow):
             pass
         
         from backend.finding_line import LineDetection
-        os.makedirs(self.path + '_alg', exist_ok=True)  # Create directory for processed files
-        processor = LineDetection(self.path, self.path + '_alg', 1, extension=self.pripona)
+        os.makedirs(self.path + '/scans/processed', exist_ok=True)  # Create directory for processed files
+        processor = LineDetection(self.path+"scans/raw", self.path + '/scans/processed', 1, extension=self.pripona)
         processor.significant_threshold_pixel = LINE_DETECTION['significant_threshold_pixel']
         processor.largest_points_threshold = LINE_DETECTION['largest_points_threshold']
         self.images_to_delete = []
         
-        files = [f for f in os.listdir(self.path) if os.path.isfile(os.path.join(self.path, f))]
+        files = [f for f in os.listdir(self.path+"/scans/raw") if os.path.isfile(os.path.join(self.path+"/scans/raw", f))]
 
         # Create a progress window for batch processing
         progress_window = tk.Toplevel(self.root.root)
@@ -399,9 +397,9 @@ class ViewerWindow(BaseWindow):
         # Function to process images in a separate thread
         def process_images():
             for i, image_file in enumerate(files):
-                output_file = os.path.join(self.path, image_file)
+                #output_file = os.path.join(self.path, image_file)
                 try:
-                    processor.apply_to_image(output_file)
+                    processor.apply_to_image(self.path, image_file)
                 except Exception as e:
                     print(f"Error processing {image_file}: {e}")
                     continue
@@ -433,8 +431,8 @@ class ViewerWindow(BaseWindow):
     # Apply the algorithm to images
     def use_algorithm_batch(self):
         from backend.finding_line import LineDetection
-        os.makedirs(self.path + '_alg', exist_ok=True)  # Create directory for processed files
-        processor = LineDetection(self.path, self.path + '_alg', 1, extension=self.pripona)
+        os.makedirs(self.path + '/scans/processed', exist_ok=True)  # Create directory for processed files
+        processor = LineDetection(self.path+"/scans/raw", self.path + '/scans/processed', 1, extension=self.pripona)
         self.images_to_delete = []
         
         # Apply the algorithm to all files in the folder
@@ -443,32 +441,35 @@ class ViewerWindow(BaseWindow):
 
     def initialize_folder_processing(self, folder_path):
         """Process the folder and perform additional operations specific to ViewerWindow."""
-        folder_path_alg = folder_path + '_alg'
-        files, files_alg = self.get_file_lists(folder_path, folder_path_alg)
-
+        #self.path
+        
+        folder_path_alg = folder_path+ '/scans/processed'
+        files, files_alg = self.get_file_lists(folder_path+'/scans/raw', folder_path_alg)
+        error = False
+        
         if files:
             extension = self.get_file_extension(files)
             self.pripona = extension
             self.all_points_to_img = []
             self.images_to_delete = []
 
-            error = False
-            if not os.path.exists(folder_path_alg) and len(files) != len(files_alg):
+            if len(files) != len(files_alg):
                 os.makedirs(folder_path_alg, exist_ok=True)
                 from backend.finding_line import LineDetection
-                processor = LineDetection(folder_path, folder_path_alg, 1, extension=extension)
+                processor = LineDetection(folder_path+'/scans/raw', folder_path_alg, 1, extension=extension)
                 processor.apply_to_folder()
                 self.all_points_to_img = processor.all_points
 
                 files_alg = [f for f in os.listdir(folder_path_alg) if os.path.isfile(os.path.join(folder_path_alg, f))]
-                if len(files) != len(files_alg):
+                if len(files) != len(files_alg)-1:
                     error = True
 
-            if not error:
-                self.clear_images()
-                self.add_to_scrollbar()
-            else:
-                messagebox.showerror("Processing Error", "An error occurred during processing. Images cannot be displayed.")
+        if not error:
+            self.path = folder_path
+            self.clear_images()
+            self.add_to_scrollbar()
+        else:
+            messagebox.showerror("Processing Error", "An error occurred during processing. Images cannot be displayed.")
 
     def get_file_lists(self, folder_path, folder_path_alg):
         """Retrieve the list of files and algorithm files in the directories."""

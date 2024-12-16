@@ -15,7 +15,7 @@ class Project:
         if base_dir is None:
             base_dir = filedialog.askdirectory(title="Select Folder")
             # delete after finishing
-            base_dir = 'C:\\Dokumenty\\Matfyz\\5.semester\\Tvorba_IS\\test'
+            #base_dir = 'C:\\Dokumenty\\Matfyz\\5.semester\\Tvorba_IS\\test'
             if not base_dir and self.project_dir is None:
                 base_dir = os.path.normpath(os.getcwd())
                 self.project_dir = os.path.join(base_dir, self.project_name)
