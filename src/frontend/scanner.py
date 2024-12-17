@@ -382,6 +382,7 @@ class Scanner(BaseWindow):
             filepath = os.path.join(scans_path, filename)
             cv2.imwrite(filepath, frame)
             ld.apply_to_image(scans_path_basic, filename)
+            ld.write_points_to_file_app()
 
 
             return True
