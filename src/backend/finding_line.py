@@ -156,3 +156,11 @@ class LineDetection:
         with open(self.project_path+'/points.txt', mode = 'w') as file:
             for i in self.all_points2:
                 print(f'{i[0]} {i[1]} {i[2]}', file = file)
+    
+    def write_points_to_file_app(self):
+        try:
+            with open(self.project_path+'/points.txt', mode = 'a') as file:
+                for i in self.all_points2:
+                    print(f'{i[0]} {i[1]} {i[2]}', file = file)
+        except:
+            pass
