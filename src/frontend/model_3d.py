@@ -9,6 +9,7 @@ from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from stl import mesh
 import trimesh
+from scipy.spatial import Delaunay
 from pygltflib import GLTF2, Mesh as GLTFMesh, Node, Scene, Buffer, BufferView, Accessor
 from frontend.base_window import BaseWindow
 
@@ -17,10 +18,10 @@ class Model3D(BaseWindow):
     def __init__(self, path, root):
         self.root = root
         self.path = path
-        from backend.finding_line import LineDetection
-        ld = LineDetection(path, path+ '_alg', 0.01, 'png')
-        ld.apply_to_folder()
-        self.all_points = ld.get_all_points()
+        # from backend.finding_line import LineDetection
+        # ld = LineDetection(path, path+ '_alg', 0.01, 'png')
+        # ld.apply_to_folder()
+        # self.all_points = ld.get_all_points()
         self.create_menu()
         self.setup_window()
         self.show_3d()
@@ -116,3 +117,17 @@ class Model3D(BaseWindow):
         self.root.root.protocol("WM_DELETE_WINDOW", self.on_closing)  # Handle window close event   
 
      # Placeholder methods for features under development
+
+    def export_file(self, format):
+        if format in ["stl", "obj", "gltf"]:
+            point_cloud = self.point_cloud()
+            if point_cloud.size == 0:
+                return 
+            tri = Delaunay(point_cloud[:, :2])
+            vertices = point_cloud
+            faces = tri.simplices 
+            mesh = trimesh.Trimesh(vertices=vertices, faces=faces)
+            mesh.export(f"{self.path}_alg/model."+format, file_type=format)
+            messagebox.showinfo("Exported", f"Model exported as {self.path}_alg/model."+format)
+        else:
+            messagebox.showerror("Unsuported format", f"Could not export {self.path} as format {format}")
