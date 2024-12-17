@@ -6,7 +6,7 @@ from PIL import Image, ImageTk
 import os
 import json
 from frontend.base_window import BaseWindow
-
+from backend.finding_line import LineDetection
 
 class Scanner(BaseWindow):
     def __init__(self, main_window):
@@ -17,6 +17,7 @@ class Scanner(BaseWindow):
         self.running = False
         self.scan_key = "space"  # Default key for scanning
         super().__init__(main_window.root)
+        self.counter = 0
  
         
 
@@ -40,7 +41,7 @@ class Scanner(BaseWindow):
         menubar.add_cascade(label="File", menu=file_menu)
         file_menu.add_command(label="Start Camera", command=self.start_camera_view)
         file_menu.add_command(label="Stop Camera", command=self.stop_stream)
-        file_menu.add_command(label="New Project", command=self.new_project)
+        file_menu.add_command(label="New Project", command=self.open_project)
         file_menu.add_command(label="Open Project", command=self.open_project)
         file_menu.add_command(label="Save Project", command=self.save_project)
         export_menu = Menu(file_menu, tearoff=0)
@@ -55,7 +56,6 @@ class Scanner(BaseWindow):
         # Main Menu
         main_menu = Menu(menubar, tearoff=0)
         menubar.add_cascade(label="Main Menu", menu=main_menu)
-        main_menu.add_command(label="Scan Profile", command=self.scan_profile)
         main_menu.add_command(label="Browse Scans", command=self.browse_scans)
 
         # Capture Menu
@@ -79,7 +79,7 @@ class Scanner(BaseWindow):
 
         # Scan button
         self.scan_button = tk.Button(
-            bottom_frame, text="Scan", command=self.start_scan, font=("Arial", 12)
+            bottom_frame, text="Scan", command=self.scan_profile, font=("Arial", 12)
         )
         self.scan_button.pack(side=tk.LEFT, padx=10)
 
@@ -350,7 +350,41 @@ class Scanner(BaseWindow):
 
     # Dummy placeholder methods for menu items            
     def export_file(self, format): messagebox.showinfo("Export", f"Export as {format} coming soon!")
-    def scan_profile(self): messagebox.showinfo("Scan Profile", "Feature coming soon!")
+    def scan_profile(self): 
+        if not hasattr(self, 'current_project') or not getattr(self, 'current_project', None):
+            messagebox.showerror("Chyba", "Najprv otvorte alebo vytvorte projekt.")
+            return
+                # Kontrola existujúcej kalibrácie
+        scans_path_basic = os.path.join(self.current_project.project_dir)
+        ld = LineDetection(scans_path_basic, scans_path_basic + '/scans/processed', 1, extension="png")
+        scans_path = os.path.join(scans_path_basic, "scans", "raw")
+        """Zachytenie jednej kalibračnej snímky."""
+        try:
+            # Zastavenie aktuálneho streamovania
+            #self.stop_stream()
+
+            # Zachytenie snímky z kamery
+            ret, frame = self.cap.read()
+            if not ret:
+                messagebox.showerror("Chyba", "Nepodarilo sa zachytiť snímku.")
+                return False
+
+            # Uloženie snímky do raw adresára
+            filename = f"scan_{self.counter}.png"
+            self.counter = self.counter + 1
+            filepath = os.path.join(scans_path, filename)
+            cv2.imwrite(filepath, frame)
+            ld.apply_to_image(scans_path_basic, filename)
+
+
+            return True
+        except Exception as e:
+            messagebox.showerror("Chyba", f"Chyba pri snímaní: {e}")
+            return False
+
+
+        
+        
     def browse_scans(self): messagebox.showinfo("Browse Scans", "Feature coming soon!")
     def start_scan(self): messagebox.showinfo("Start Scan", "Feature coming soon!")
     def stop_scan(self): messagebox.showinfo("Stop Scan", "Feature coming soon!")
