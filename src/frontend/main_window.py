@@ -13,9 +13,10 @@ from frontend.model_3d import Model3D
 from frontend.base_window import BaseWindow
 
 class MainWindow(BaseWindow):
-    def __init__(self, root):
+    def __init__(self, root, actual_project = None):
         self.root = root
         self.current_frame = None
+        self.actual_project = actual_project
         self.setup_window()
         self.setup_styles()
         self.show_main_menu()
@@ -172,9 +173,9 @@ class MainWindow(BaseWindow):
     def handle_view(self):
         """Handle the 'VIEW SCANS' button click"""
         self.clear_window()
-        viewer = ViewerWindow('', self)
+        viewer = ViewerWindow('', self, self.actual_project)
 
     def handle_3d(self):
         """Handle the 'SHOW 3D MODEL' button click"""
         self.clear_window()
-        model3d = Model3D('images/gombik',self)
+        model3d = Model3D('images/gombik_novy',self)
