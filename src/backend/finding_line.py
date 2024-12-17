@@ -10,7 +10,8 @@ class LineDetection:
     folder exists before running the program."""
     def __init__(self, path, out_path, constant, extension='jpg'):
         # Initialize parameters
-        self.path = path
+        self.project_path = path
+        self.path = path + '/scans/raw'
         self.out_path = out_path
         self.extension = extension
         self.constant = constant
@@ -152,6 +153,6 @@ class LineDetection:
     
     
     def write_points_to_file(self):
-        with open(self.out_path+'/points.txt', mode = 'w') as file:
+        with open(self.project_path+'/points.txt', mode = 'w') as file:
             for i in self.all_points2:
                 print(f'{i[0]} {i[1]} {i[2]}', file = file)

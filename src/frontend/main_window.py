@@ -172,7 +172,7 @@ class MainWindow(BaseWindow):
     def handle_view(self):
         """Handle the 'VIEW SCANS' button click"""
         self.clear_window()
-        viewer = ViewerWindow('images/novy', self)
+        viewer = ViewerWindow('', self)
 
     def handle_3d(self):
         """Handle the 'SHOW 3D MODEL' button click"""
