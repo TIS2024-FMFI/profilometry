@@ -9,12 +9,13 @@ from frontend.base_window import BaseWindow
 from backend.finding_line import LineDetection
 
 class Scanner(BaseWindow):
-    def __init__(self, main_window):
+    def __init__(self, main_window, actual_project):
         self.main_window = main_window
         self.cap = None
         self.canvas = None
         self.camera_index = self.detect_connected_camera()
         self.running = False
+        self.actual_project = actual_project
         self.scan_key = "space"  # Default key for scanning
         super().__init__(main_window.root)
         self.counter = 0
@@ -31,6 +32,10 @@ class Scanner(BaseWindow):
         self.setup_camera_view()
         self.create_bottom_strip()
 
+    def open_project_f(self):
+        self.open_project()
+        self.actual_project = self.current_project 
+
     def create_menu(self):
         """Create the menu bar."""
         menubar = Menu(self.main_window.root)
@@ -41,8 +46,8 @@ class Scanner(BaseWindow):
         menubar.add_cascade(label="File", menu=file_menu)
         file_menu.add_command(label="Start Camera", command=self.start_camera_view)
         file_menu.add_command(label="Stop Camera", command=self.stop_stream)
-        file_menu.add_command(label="New Project", command=self.open_project)
-        file_menu.add_command(label="Open Project", command=self.open_project)
+        file_menu.add_command(label="New Project", command=self.open_project_f)
+        file_menu.add_command(label="Open Project", command=self.open_project_f)
         file_menu.add_command(label="Save Project", command=self.save_project)
         export_menu = Menu(file_menu, tearoff=0)
         file_menu.add_cascade(label="Export", menu=export_menu)
@@ -329,6 +334,8 @@ class Scanner(BaseWindow):
         # Stop stream
         self.running = False
         
+        self.actual_project = self.current_project
+        
         # Release the camera
         if self.cap:
             self.cap.release()
@@ -341,7 +348,7 @@ class Scanner(BaseWindow):
             widget.destroy()
         
         # Delete all widgets
-        self.main_window.show_main_menu()
+        self.main_window.show_main_menu(self.actual_project)
 
     def exit_application(self):
         """Exit the application."""

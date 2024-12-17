@@ -11,9 +11,14 @@ import threading
 from frontend.base_window import BaseWindow
 
 class ViewerWindow(BaseWindow):
-    def __init__(self, path, root ):
+    def __init__(self, path, root, actual_project ):
         self.root = root
-        self.path = path
+        if actual_project !=None:
+            self.path = actual_project.project_dir
+        else:
+            self.path = path
+            
+        self.actual_project = actual_project
         self.all_points_to_img = []
         self.images_to_delete = []
         self.screen_width = self.root.root.winfo_screenwidth()
@@ -25,8 +30,9 @@ class ViewerWindow(BaseWindow):
         LINE_DETECTION['significant_threshold_pixel'] = 80
         LINE_DETECTION['largest_points_threshold'] = 30
         
-        if not os.path.isfile(self.path):
-            self.open_project()            
+        if not os.path.exists(self.path):
+            self.open_project()  
+            self.actual_project = self.current_project      
         
         if not self.check_needs_generation():  # Check if files need to be processed
             self.add_images()  # Add existing images
@@ -50,6 +56,11 @@ class ViewerWindow(BaseWindow):
 
         return True
 
+
+    def open_project_f(self):
+        self.open_project()
+        self.actual_project = self.current_project
+    
     # Create the application menu bar
     def create_menu(self):
         self.menubar = tk.Menu(self.root.root)
@@ -58,7 +69,7 @@ class ViewerWindow(BaseWindow):
         # File menu
         file_menu = tk.Menu(self.menubar, tearoff=0)
         self.menubar.add_cascade(label="File", menu=file_menu)
-        file_menu.add_command(label="Open Project", command=self.open_project)
+        file_menu.add_command(label="Open Project", command=self.open_project_f)
         file_menu.add_command(label="Use Algorithm", command=self.use_algorithm_to_images)
         file_menu.add_separator()
         file_menu.add_command(label="Exit", command=self.on_closing)
@@ -126,7 +137,7 @@ class ViewerWindow(BaseWindow):
                 widget.destroy()
 
             from frontend.main_window import MainWindow
-            MainWindow(self.root.root)
+            MainWindow(self.root.root, self.actual_project)
             
         def show2d():
             from backend.finding_line import LineDetection
@@ -259,9 +270,13 @@ class ViewerWindow(BaseWindow):
                 
 
                 split_path = file_path.split('\\')
-                new_file_path = split_path[0] +'/scans/raw\\' + split_path[1]
-                split_path[0] += '/scans/processed\\'
-                processed_image_path = split_path[0] + split_path[1]
+                img = split_path.pop()
+                path_to = ""
+                for i in split_path:
+                    path_to+=i+'/'
+                path_to = path_to[:-1]
+                new_file_path = path_to +'/scans/raw\\' + img
+                processed_image_path = path_to+ '/scans/processed\\' + img
                 #print(new_file_path, " ---- " , processed_image_path)
                 self.scrollbar_images.append((new_file_path, processed_image_path))
                 
@@ -540,7 +555,7 @@ class ViewerWindow(BaseWindow):
             widget.destroy()
             
         from frontend.main_window import MainWindow
-        w = MainWindow(self.root.root)
+        w = MainWindow(self.root.root, self.actual_project)
         w.handle_scan()
 
     def show_3d(self):
@@ -548,6 +563,6 @@ class ViewerWindow(BaseWindow):
             widget.destroy()
         
         from frontend.main_window import MainWindow
-        w = MainWindow(self.root.root)
+        w = MainWindow(self.root.root, self.actual_project)
         w.handle_3d()
         

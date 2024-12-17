@@ -13,12 +13,14 @@ from frontend.model_3d import Model3D
 from frontend.base_window import BaseWindow
 
 class MainWindow(BaseWindow):
-    def __init__(self, root):
+    def __init__(self, root, actual_project = None):
         self.root = root
         self.current_frame = None
         self.setup_window()
         self.setup_styles()
         self.show_main_menu()
+        
+        self.actual_project = actual_project
 
     def setup_styles(self):
         """Setup custom styles for the buttons in the application"""
@@ -63,10 +65,10 @@ class MainWindow(BaseWindow):
         self.current_frame = tk.Frame(self.root, bg=WINDOW_CONFIG['bg_color'])
         self.current_frame.pack(expand=True, fill='none')
 
-    def show_main_menu(self):
+    def show_main_menu(self, actual_project = None):
         """Display the main menu interface with logo and buttons"""
         self.clear_window()
-
+        self.actual_project = actual_project
         # Main menu frame
         self.current_frame = tk.Frame(self.root, bg=WINDOW_CONFIG['bg_color'])
         self.current_frame.place(relx=0.5, rely=0.5, anchor='center')
@@ -166,15 +168,15 @@ class MainWindow(BaseWindow):
     def handle_scan(self):
         """Handle the 'SCAN IMAGE' button click"""
         self.clear_window()
-        scanner = Scanner(self)
+        scanner = Scanner(self, self.actual_project)
         scanner.start_camera_view()
         
     def handle_view(self):
         """Handle the 'VIEW SCANS' button click"""
         self.clear_window()
-        viewer = ViewerWindow('', self)
+        viewer = ViewerWindow('', self, self.actual_project)
 
     def handle_3d(self):
         """Handle the 'SHOW 3D MODEL' button click"""
         self.clear_window()
-        model3d = Model3D('images/gombik',self)
+        model3d = Model3D('images/gombik_novy',self)

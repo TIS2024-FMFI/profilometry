@@ -77,8 +77,8 @@ class LineDetection:
             cv2.circle(new_img, (point[0], point[1]), radius=2, color=(0, 0, 255), thickness=-1)
 
         # Calculate and store points
-        new_points = [(point[0], point[1] * self.shift_count * self.constant, 
-                       point[1] - avg_reference // len(reference_points)) 
+        new_points = [(int(point[0]), int(point[1] * self.shift_count * self.constant), 
+                       int(point[1] - avg_reference // len(reference_points))) 
                       for point in object_points]
 
         self.all_points.append(np.array(new_points, np.int32))
