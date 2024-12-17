@@ -24,25 +24,28 @@ class ViewerWindow(BaseWindow):
         self.pripona = 'png'  # File extension (e.g., png, jpg)
         LINE_DETECTION['significant_threshold_pixel'] = 80
         LINE_DETECTION['largest_points_threshold'] = 30
-
+        
+        if not os.path.isfile(self.path):
+            self.open_project()            
+        
         if not self.check_needs_generation():  # Check if files need to be processed
             self.add_images()  # Add existing images
             self.setup_window()  # Initialize the main window layout
             self.create_menu()  # Create the menu bar
-        else:
-            print("TREBA")
+        else: 
             self.use_algorithm_image_by_image()  # Run the algorithm if needed
 
     # Check if the algorithm needs to generate processed files
     def check_needs_generation(self):
         files = [f for f in os.listdir(self.path+"/scans/raw") if os.path.isfile(os.path.join(self.path+"/scans/raw", f))]
+                    
         try:
             files_alg = [f for f in os.listdir(self.path + "/scans/processed") if os.path.isfile(os.path.join(self.path + "/scans/processed", f))]
         except:
             files_alg = []
             
         # If processed files exist and match the count of originals, no generation is needed
-        if len(files_alg) > 0 and len(files) <= len(files_alg):
+        if len(files_alg) > 0 and len(files) == len(files_alg):
             return False
 
         return True
@@ -127,14 +130,34 @@ class ViewerWindow(BaseWindow):
             
         def show2d():
             from backend.finding_line import LineDetection
-            ld = LineDetection(self.path+'/scans/raw' , self.path + '/scans/processed', constant=1, extension= self.pripona)
+            ld = LineDetection(self.path , self.path + '/scans/processed', constant=1, extension= self.pripona)
             if len(self.all_points_to_img) > 1:
                 ld.all_points = self.all_points_to_img
+                ld.display_all_points()
+                
+            elif os.path.isfile(self.path+'/points.txt'):
+                with open(self.path+'/points.txt', 'r') as file:
+                    cnt = 0
+                    pom = []
+                    for i in file:
+                        cnt+=1
+                        x,y,z = i.split(' ')
+                        pom.append([int(x), int(y), int(z)])
+                          
+                if cnt>0:
+                    ld.all_points2 = pom
+                    ld.display_all_points2()
+                    
+                else:
+                    ld.apply_to_folder()
+                    self.all_points_to_img = ld.all_points
+                    ld.display_all_points()
+                
             else:
                 ld.apply_to_folder()
                 self.all_points_to_img = ld.all_points
             
-            ld.display_all_points()
+                ld.display_all_points()
         
         def delete_input_box1():
             input_window = tk.Toplevel(self.root.root)
@@ -216,8 +239,11 @@ class ViewerWindow(BaseWindow):
 
     # Clear all images from the scrollable frame
     def clear_images(self):
-        for widget in self.scrollable_frame.winfo_children():
-            widget.destroy()
+        try:
+            for widget in self.scrollable_frame.winfo_children():
+                widget.destroy()
+        except:
+            pass
 
     # Add images to the scrollbar
     def add_to_scrollbar(self):
@@ -392,7 +418,7 @@ class ViewerWindow(BaseWindow):
         
         from backend.finding_line import LineDetection
         os.makedirs(self.path + '/scans/processed', exist_ok=True)  # Create directory for processed files
-        processor = LineDetection(self.path+"scans/raw", self.path + '/scans/processed', 1, extension=self.pripona)
+        processor = LineDetection(self.path, self.path + '/scans/processed', 1, extension=self.pripona)
         processor.significant_threshold_pixel = LINE_DETECTION['significant_threshold_pixel']
         processor.largest_points_threshold = LINE_DETECTION['largest_points_threshold']
         self.images_to_delete = []
@@ -437,6 +463,7 @@ class ViewerWindow(BaseWindow):
             if thread.is_alive():
                 self.root.root.after(100, check_thread)
             else:
+                self.setup_window()
                 self.create_menu()  # Create the menu bar
                 self.add_images() # Add images to Scrollbar
                 self.setup_window()  # Initialize the main window layout
@@ -448,7 +475,7 @@ class ViewerWindow(BaseWindow):
     def use_algorithm_batch(self):
         from backend.finding_line import LineDetection
         os.makedirs(self.path + '/scans/processed', exist_ok=True)  # Create directory for processed files
-        processor = LineDetection(self.path+"/scans/raw", self.path + '/scans/processed', 1, extension=self.pripona)
+        processor = LineDetection(self.path, self.path + '/scans/processed', 1, extension=self.pripona)
         self.images_to_delete = []
         
         # Apply the algorithm to all files in the folder
@@ -472,18 +499,20 @@ class ViewerWindow(BaseWindow):
             if len(files) != len(files_alg):
                 os.makedirs(folder_path_alg, exist_ok=True)
                 from backend.finding_line import LineDetection
-                processor = LineDetection(folder_path+'/scans/raw', folder_path_alg, 1, extension=extension)
+                processor = LineDetection(folder_path, folder_path_alg, 1, extension=extension)
                 processor.apply_to_folder()
                 self.all_points_to_img = processor.all_points
 
                 files_alg = [f for f in os.listdir(folder_path_alg) if os.path.isfile(os.path.join(folder_path_alg, f))]
-                if len(files) != len(files_alg)-1:
+                if len(files) != len(files_alg):
                     error = True
 
         if not error:
             self.path = folder_path
             self.clear_images()
-            self.add_to_scrollbar()
+            self.setup_window()
+            self.add_images()
+            self.setup_window()
         else:
             messagebox.showerror("Processing Error", "An error occurred during processing. Images cannot be displayed.")
 
@@ -491,7 +520,7 @@ class ViewerWindow(BaseWindow):
         """Retrieve the list of files and algorithm files in the directories."""
         files = [f for f in os.listdir(folder_path) if os.path.isfile(os.path.join(folder_path, f))]
         try:
-            if not os.path.exists(folder_path_alg):
+            if os.path.exists(folder_path_alg):
                 files_alg = [f for f in os.listdir(folder_path_alg) if os.path.isfile(os.path.join(folder_path_alg, f))]
             else:
                 files_alg = []
