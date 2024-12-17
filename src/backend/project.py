@@ -14,6 +14,7 @@ class Project:
     def set_dir(self, base_dir=None):
         if base_dir is None:
             base_dir = filedialog.askdirectory(title="Select Folder")
+
             if not base_dir and self.project_dir is None:
                 base_dir = os.path.normpath(os.getcwd())
                 self.project_dir = os.path.join(base_dir, self.project_name)

@@ -95,11 +95,11 @@ class LineDetection:
         cv2.imshow("window", img)
         cv2.waitKey(0)
 
-    def apply_to_image(self, image_path):
+    def apply_to_image(self, image_path, image):
         # Apply the algorithm to a single image
-        components = image_path.split('\\')
-        img = self.find_line_alg1(image_path)
-        cv2.imwrite(components[0] + '_alg\\' + components[1], img)
+        
+        img = self.find_line_alg1(image_path+ "/scans/raw/" + image)
+        cv2.imwrite(image_path + '/scans/processed/' + image, img)
 
     def apply_to_folder(self):
         # Apply the algorithm to all images in the folder
