@@ -43,8 +43,9 @@ class BaseWindow:
         if folder_path:
             try:
                 project_name = os.path.basename(folder_path)
-                self.current_project = Project(project_name, base_path=os.path.dirname(folder_path))
-                self.current_project.open_project(folder_path)
+                self.current_project = Project(project_name, base_dir=os.path.dirname(folder_path))
+                self.current_project.open_project()
+                self.current_project.create_scan_folders(folder_path+'/scans')
                 self.initialize_folder_processing(folder_path)
             except Exception as e:
                 messagebox.showerror("Error", f"Failed to open project: {e}")
@@ -74,3 +75,5 @@ class BaseWindow:
     # Handle window closing
     def on_closing(self):
         self.root.root.destroy()
+    def get_current_project(self):
+        return self.current_project
