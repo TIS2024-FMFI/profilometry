@@ -400,18 +400,17 @@ class Scanner(BaseWindow):
 
     def open_camera_settings(self):
         if not self.cap.isOpened():
-            print("Error: Camera could not be opened.")
+            messagebox.showerror("Error", "Camera could not be opened.")
             return
 
         # Open the camera settings dialog
         self.cap.set(cv2.CAP_PROP_SETTINGS, 1)
-        print("Camera settings window opened. Adjust settings and close when done.")
 
         # Use an invisible loop to keep the app responsive while allowing window closure
         while cv2.getWindowProperty("Camera Preview", cv2.WND_PROP_VISIBLE) >= 1:
             ret, frame = self.cap.read()
             if not ret:
-                print("Error: Cannot capture video frame.")
+                messagebox.showerror("Error", "Cannot capture video frame.")
                 break
 
             # Display the live feed in the original preview window if needed
