@@ -27,14 +27,12 @@ class Model3D(BaseWindow):
             self.open_project()  
             self.actual_project = self.current_project 
             self.path = self.actual_project.project_dir
-            # print("open path "+self.path+ "open current project " + self.current_project.project_dir + "open actual project " + self.actual_project.project_dir)            path = self.actual_project.project_dir
         self.create_menu()
         self.setup_window()
 
     def point_cloud(self):
         """Reads 3D points from points.txt in the specified path and creates pointcloud for further processing."""
         file_path = f"{self.path}/points.txt"       
-        # print("point cloud path " +self.path)
         try:
             point_cloud = np.loadtxt(file_path, dtype=int)
             return point_cloud
@@ -152,15 +150,31 @@ class Model3D(BaseWindow):
         self.root.root.protocol("WM_DELETE_WINDOW", self.on_closing)  # Handle window close event   
 
     def export_file(self, format):
+        """
+        Exports the 3D object in the specified format (STL, OBJ, GLTF).
+        Creates an 'objects' directory in self.path if it doesn't exist.
+        """
         if format in ["stl", "obj", "gltf"]:
             point_cloud = self.point_cloud()
             if point_cloud.size == 0:
                 return 
-            tri = Delaunay(point_cloud[:, :2])
+            objects_folder = os.path.join(self.path, "objects")
+            if not os.path.exists(objects_folder):
+                os.makedirs(objects_folder)
+                print(f"Created folder {objects_folder}")
             vertices = point_cloud
-            faces = tri.simplices 
+            try:
+                tri = Delaunay(vertices[:, :2])
+                faces = tri.simplices
+            except Exception as e:
+                messagebox.showerror("Export Error", f"Triangulation failed: {e}")
+                return
+
             mesh = trimesh.Trimesh(vertices=vertices, faces=faces)
-            mesh.export(f"{self.path}"+format, file_type=format)
-            messagebox.showinfo("Exported", f"Model exported as {self.path}"+format)
-        else:
-            messagebox.showerror("Unsuported format", f"Could not export {self.path} as format {format}")
+
+            output_file = os.path.join(objects_folder, f"model.{format}")
+            try:
+                mesh.export(output_file, file_type=format)
+                messagebox.showinfo("Exported", f"Model exported as {output_file}")
+            except Exception as e:
+                messagebox.showerror("Export Error", f"Failed to export model: {e}")
