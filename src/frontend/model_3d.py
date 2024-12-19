@@ -18,16 +18,16 @@ class Model3D(BaseWindow):
     def __init__(self, path, root):
         self.root = root
         self.path = path
-        # from backend.finding_line import LineDetection
-        # ld = LineDetection(path, path+ '_alg', 0.01, 'png')
+        #from backend.finding_line import LineDetection
+        # ld = LineDetection(path, path+ '_alg', 1, 'png')
         # ld.apply_to_folder()
         # self.all_points = ld.get_all_points()
-        self.create_menu()
-        self.setup_window()
+        # self.create_menu()
+        # self.setup_window()
         self.show_3d()
 
     def point_cloud(self):
-        file_path = f"{self.path+'_alg'}/points.txt"
+        file_path = f"{self.path}/points.txt"
         try:
             point_cloud = np.loadtxt(file_path, dtype=int)
             return point_cloud

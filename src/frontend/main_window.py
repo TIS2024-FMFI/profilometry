@@ -179,4 +179,4 @@ class MainWindow(BaseWindow):
     def handle_3d(self):
         """Handle the 'SHOW 3D MODEL' button click"""
         self.clear_window()
-        model3d = Model3D('images/gombik_novy',self)
+        model3d = Model3D('images/skuska_obrazky/',self)
