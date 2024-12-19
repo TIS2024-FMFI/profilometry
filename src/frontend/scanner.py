@@ -4,6 +4,7 @@ import tkinter as tk
 from tkinter import Menu, messagebox, ttk, filedialog, simpledialog
 from PIL import Image, ImageTk
 import os
+import re
 import json
 from frontend.base_window import BaseWindow
 from backend.finding_line import LineDetection
@@ -50,18 +51,10 @@ class Scanner(BaseWindow):
         file_menu.add_command(label="Open Project", command=self.open_project_f)
         file_menu.add_command(label="Save Project", command=self.save_project)
         export_menu = Menu(file_menu, tearoff=0)
-        file_menu.add_cascade(label="Export", menu=export_menu)
-        export_menu.add_command(label="STL", command=lambda: self.export_file("stl"))
-        export_menu.add_command(label="OBJ", command=lambda: self.export_file("obj"))
-        export_menu.add_command(label="GLTF", command=lambda: self.export_file("gltf"))
         file_menu.add_separator()
         file_menu.add_command(label="Back to Main Menu", command=self.back_to_main_menu)
         file_menu.add_command(label="Exit", command=self.exit_application)
 
-        # Main Menu
-        main_menu = Menu(menubar, tearoff=0)
-        menubar.add_cascade(label="Main Menu", menu=main_menu)
-        main_menu.add_command(label="Browse Scans", command=self.browse_scans)
 
         # Capture Menu
         settings = Menu(menubar, tearoff=0)
@@ -334,7 +327,7 @@ class Scanner(BaseWindow):
         # Stop stream
         self.running = False
         
-        self.actual_project = self.current_project
+        #self.actual_project = self.current_project
         
         # Release the camera
         if self.cap:
@@ -354,22 +347,21 @@ class Scanner(BaseWindow):
         """Exit the application."""
         self.stop_stream()
         self.main_window.root.destroy()
-
-    # Dummy placeholder methods for menu items            
+          
     def export_file(self, format): messagebox.showinfo("Export", f"Export as {format} coming soon!")
     def scan_profile(self): 
-        if not hasattr(self, 'current_project') or not getattr(self, 'current_project', None):
-            messagebox.showerror("Chyba", "Najprv otvorte alebo vytvorte projekt.")
+        if not hasattr(self, 'actual_project') or not getattr(self, 'actual_project', None):
+            messagebox.showerror("Error", "First, open or create a project.")
             return
-                # Kontrola existujúcej kalibrácie
-        scans_path_basic = os.path.join(self.current_project.project_dir)
+        # Check existing calibration
+        scans_path_basic = os.path.join(self.actual_project.project_dir)
         ld = LineDetection(scans_path_basic, scans_path_basic + '/scans/processed', 1, extension="png")
         scans_path = os.path.join(scans_path_basic, "scans", "raw")
-        """Zachytenie jednej kalibračnej snímky."""
-        try:
-            # Zastavenie aktuálneho streamovania
-            #self.stop_stream()
 
+        # Initialize counter based on existing files
+        self.initialize_counter(scans_path)
+
+        try:
             # Zachytenie snímky z kamery
             ret, frame = self.cap.read()
             if not ret:
@@ -389,10 +381,24 @@ class Scanner(BaseWindow):
         except Exception as e:
             messagebox.showerror("Chyba", f"Chyba pri snímaní: {e}")
             return False
-
-
         
+    def initialize_counter(self, scans_path):
+        """Initialize the counter based on the existing images in the scans_path."""
+        if not os.path.exists(scans_path):
+            os.makedirs(scans_path)
+
+        existing_files = [f for f in os.listdir(scans_path) if f.startswith("scan_") and f.endswith(".png")]
         
+        # Extract numbers from filenames like scan_1.png, scan_2.png
+        highest_number = 0
+        for file in existing_files:
+            match = re.match(r"scan_(\d+)\.png", file)
+            if match:
+                number = int(match.group(1))
+                highest_number = max(highest_number, number)
+        
+        self.counter = highest_number + 1
+
     def browse_scans(self): messagebox.showinfo("Browse Scans", "Feature coming soon!")
     def start_scan(self): messagebox.showinfo("Start Scan", "Feature coming soon!")
     def stop_scan(self): messagebox.showinfo("Stop Scan", "Feature coming soon!")
@@ -423,7 +429,7 @@ class Scanner(BaseWindow):
     def calibration(self):
         """Otvorenie kalibračného dialógového okna pre projekt."""
         # Najprv skontrolujeme, či je projekt otvorený
-        if not hasattr(self, 'current_project') or not getattr(self, 'current_project', None):
+        if not hasattr(self, 'actual_project') or not getattr(self, 'actual_project', None):
             messagebox.showerror("Chyba", "Najprv otvorte alebo vytvorte projekt.")
             return
 
@@ -434,7 +440,7 @@ class Scanner(BaseWindow):
         calibration_dialog.resizable(False, False)
 
         # Kontrola existujúcej kalibrácie
-        calibration_path = os.path.join(self.current_project.project_dir, "calibration")
+        calibration_path = os.path.join(self.actual_project.project_dir, "calibration")
         
         # Premenné pre kalibráciu
         width_var = tk.StringVar()
