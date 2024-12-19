@@ -22,18 +22,18 @@ class Model3D(BaseWindow):
             self.path = actual_project.project_dir
         else:
             self.path = path
+        self.actual_project = actual_project
         if not os.path.exists(self.path):
             self.open_project()  
             self.actual_project = self.current_project 
+            # print("open path "+self.path+ "open current project " + self.current_project.project_dir + "open actual project " + self.actual_project.project_dir)            path = self.actual_project.project_dir
         self.create_menu()
         self.setup_window()
 
     def point_cloud(self):
         """Reads 3D points from points.txt in the specified path and creates pointcloud for further processing."""
-        file_path = f"{self.path}/points.txt"
-         #   "K:\MATFYZ\3AIN ZS\Tvorba informacnych systemov\projekt\profilometry\images\gombik_novy\points.txt"
-        print("ahaho "+file_path)
-        print("tutu" +self.path)
+        file_path = f"{self.path}/points.txt"       
+        # print("point cloud path " +self.path)
         try:
             point_cloud = np.loadtxt(file_path, dtype=int)
             return point_cloud
