@@ -3,6 +3,7 @@ import numpy as np
 np.set_printoptions(threshold=np.inf)
 from tkinter import Menu, messagebox
 import cv2 as cv
+import os
 from config import WINDOW_CONFIG
 import matplotlib.pyplot as plt
 from matplotlib.figure import Figure
@@ -10,24 +11,27 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from stl import mesh
 import trimesh
 from scipy.spatial import Delaunay
-from pygltflib import GLTF2, Mesh as GLTFMesh, Node, Scene, Buffer, BufferView, Accessor
+from pygltflib import  Mesh as GLTFMesh, Node, Scene, Buffer, BufferView, Accessor
 from frontend.base_window import BaseWindow
 
 
 class Model3D(BaseWindow):
-    def __init__(self, path, root):
+    def __init__(self, path, root, actual_project):
         self.root = root
-        self.path = path
-        # from backend.finding_line import LineDetection
-        # ld = LineDetection(path, path+ '_alg', 0.01, 'png')
-        # ld.apply_to_folder()
-        # self.all_points = ld.get_all_points()
+        if actual_project != None:
+            self.path = actual_project.project_dir
+        else:
+            self.path = path
+
+        if not os.path.exists(self.path):
+                    self.open_project()  
+                    self.actual_project = self.current_project
         self.create_menu()
         self.setup_window()
         self.show_3d()
 
     def point_cloud(self):
-        file_path = f"{self.path+'_alg'}/points.txt"
+        file_path = f"{self.path}/points.txt"
         try:
             point_cloud = np.loadtxt(file_path, dtype=int)
             return point_cloud
@@ -55,6 +59,10 @@ class Model3D(BaseWindow):
         canvas.draw()
         canvas.get_tk_widget().pack(fill='both', expand=True)
 
+    def open_project_f(self):
+            self.open_project()
+            self.actual_project = self.current_project
+
     def create_menu(self):
         self.menubar = Menu(self.root.root)
         self.root.root.config(menu=self.menubar)
@@ -81,7 +89,7 @@ class Model3D(BaseWindow):
         main_menu.add_command(label= "View Scans", command=self.browse_scans)
 
     def setup_window(self):
-        title = self.path.split('/')[-1]
+        title = self.path.split("\\")[-1]
         lbl = tk.Label(self.root.root, text="3D model "+title, font=('Arial 14')) 
         lbl.config(bg='white')
         lbl.place(x=550, y=50)
@@ -92,7 +100,7 @@ class Model3D(BaseWindow):
                 widget.destroy()
 
             from frontend.main_window import MainWindow
-            MainWindow(self.root.root)
+            MainWindow(self.root.root, self.actual_project)
 
         # Highlight button on hover
 
@@ -127,7 +135,7 @@ class Model3D(BaseWindow):
             vertices = point_cloud
             faces = tri.simplices 
             mesh = trimesh.Trimesh(vertices=vertices, faces=faces)
-            mesh.export(f"{self.path}_alg/model."+format, file_type=format)
-            messagebox.showinfo("Exported", f"Model exported as {self.path}_alg/model."+format)
+            mesh.export(f"{self.path}"+format, file_type=format)
+            messagebox.showinfo("Exported", f"Model exported as {self.path}"+format)
         else:
             messagebox.showerror("Unsuported format", f"Could not export {self.path} as format {format}")
