@@ -161,7 +161,7 @@ class Model3D(BaseWindow):
             objects_folder = os.path.join(self.path, "objects")
             if not os.path.exists(objects_folder):
                 os.makedirs(objects_folder)
-                print(f"Created folder {objects_folder}")
+                print(f"Created folder {objects_folder}")    
             vertices = point_cloud
             try:
                 tri = Delaunay(vertices[:, :2])
@@ -171,7 +171,6 @@ class Model3D(BaseWindow):
                 return
 
             mesh = trimesh.Trimesh(vertices=vertices, faces=faces)
-
             output_file = os.path.join(objects_folder, f"model.{format}")
             try:
                 mesh.export(output_file, file_type=format)
