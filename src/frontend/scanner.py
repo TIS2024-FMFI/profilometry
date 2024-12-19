@@ -149,7 +149,7 @@ class Scanner(BaseWindow):
 
     def start_camera_view(self):
         """Initialize the camera view."""
-        self.cap = cv2.VideoCapture(self.camera_index)
+        self.cap = cv2.VideoCapture(self.camera_index, cv2.CAP_DSHOW)
         print()
         if not self.cap.isOpened():
             messagebox.showerror("Error", "Unable to access camera.")
@@ -202,7 +202,7 @@ class Scanner(BaseWindow):
 
             for index in range(10):
                 try:
-                    cap = cv2.VideoCapture(index)
+                    cap = cv2.VideoCapture(index, cv2.CAP_DSHOW)
                     if cap.isOpened():
                         name = f"Camera {index}"
                         if connected_camera_id in name:
@@ -397,7 +397,29 @@ class Scanner(BaseWindow):
     def start_scan(self): messagebox.showinfo("Start Scan", "Feature coming soon!")
     def stop_scan(self): messagebox.showinfo("Stop Scan", "Feature coming soon!")
     def save_scan(self): messagebox.showinfo("Save Scan", "Feature coming soon!")
-    def open_camera_settings(self): messagebox.showinfo("Camera Settings", "Feature coming soon!")
+
+    def open_camera_settings(self):
+        if not self.cap.isOpened():
+            messagebox.showerror("Error", "Camera could not be opened.")
+            return
+
+        # Open the camera settings dialog
+        self.cap.set(cv2.CAP_PROP_SETTINGS, 1)
+
+        # Use an invisible loop to keep the app responsive while allowing window closure
+        while cv2.getWindowProperty("Camera Preview", cv2.WND_PROP_VISIBLE) >= 1:
+            ret, frame = self.cap.read()
+            if not ret:
+                messagebox.showerror("Error", "Cannot capture video frame.")
+                break
+
+            # Display the live feed in the original preview window if needed
+            cv2.imshow("Camera Preview", frame)
+
+            # Exit the loop if the user manually closes the window using the "X" button
+            if cv2.getWindowProperty("Camera Preview", cv2.WND_PROP_VISIBLE) < 1:
+                break
+
     def calibration(self):
         """Otvorenie kalibračného dialógového okna pre projekt."""
         # Najprv skontrolujeme, či je projekt otvorený

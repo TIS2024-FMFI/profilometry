@@ -1,19 +1,19 @@
-Profilometer-TIS/
+Profilometry/
 │
 ├── src/
-│   ├── frontend/
-│   │   ├── __init__.py
-│   │   └── main_window.py         # Main application window
-│   │
 │   ├── backend/
-│   │   ├── __init__.py
-│   │   ├── scanner.py             # Logic for image scanning
-│   │   ├── viewer.py              # Logic for viewing scans
-│   │   └── model_3d.py            # Logic for 3D model visualization
+│   │   ├── finding_line.py         # Logic for line detection
+│   │   └── project.py              # Core project logic
 │   │
-│   ├── config.py                  # Configuration constants
-│   └── finding_line.py            # Line detection logic
+│   ├── frontend/
+│   │   ├── base_window.py          # Base window setup
+│   │   ├── main_window.py          # Main application window
+│   │   ├── model_3d.py             # 3D model rendering modul
+│   │   ├── scanner.py              # Frontend scanner module
+│   │   └── viewer.py               # Modul for viewing scans
+│   │
+│   └── config.py                   # Configuration constants
 │
-├── main.py                        # Main entry point for the application
-├── requirements.txt               # Python dependencies
-└── README.md                      # Project documentation
+├── README.md                       # Project documentation
+├── main.py                         # Main entry point for the application
+└── requirements.txt                # Dependencies for the project
