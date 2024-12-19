@@ -366,29 +366,29 @@ class Scanner(BaseWindow):
         ld = LineDetection(scans_path_basic, scans_path_basic + '/scans/processed', 1, extension="png")
         scans_path = os.path.join(scans_path_basic, "scans", "raw")
         """Zachytenie jednej kalibračnej snímky."""
-        try:
+        #try:
             # Zastavenie aktuálneho streamovania
             #self.stop_stream()
 
             # Zachytenie snímky z kamery
-            ret, frame = self.cap.read()
-            if not ret:
-                messagebox.showerror("Chyba", "Nepodarilo sa zachytiť snímku.")
-                return False
-
-            # Uloženie snímky do raw adresára
-            filename = f"scan_{self.counter}.png"
-            self.counter = self.counter + 1
-            filepath = os.path.join(scans_path, filename)
-            cv2.imwrite(filepath, frame)
-            ld.apply_to_image(scans_path_basic, filename)
-            ld.write_points_to_file_app()
-
-
-            return True
-        except Exception as e:
-            messagebox.showerror("Chyba", f"Chyba pri snímaní: {e}")
+        ret, frame = self.cap.read()
+        if not ret:
+            messagebox.showerror("Chyba", "Nepodarilo sa zachytiť snímku.")
             return False
+
+        # Uloženie snímky do raw adresára
+        filename = f"scan_{self.counter}.png"
+        self.counter = self.counter + 1
+        filepath = os.path.join(scans_path, filename)
+        cv2.imwrite(filepath, frame)
+        ld.apply_to_image(scans_path_basic, filename)
+        ld.write_points_to_file_app()
+
+
+        return True
+        # except Exception as e:
+        #     messagebox.showerror("Chyba", f"Chyba pri snímaní: {e}")
+        #     return False
 
 
         

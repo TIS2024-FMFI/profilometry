@@ -68,10 +68,11 @@ class LineDetection:
                     object_points.append(point)
         
         # Draw reference line
-        cv2.line(new_img, (0, avg_reference // len(reference_points)), 
-                 (img.shape[1], avg_reference // len(reference_points)), 
-                 (200, 120, 100), 3)
-
+        if len(reference_points) > 0:
+            cv2.line(new_img, (0, avg_reference // len(reference_points)), 
+                    (img.shape[1], avg_reference // len(reference_points)), 
+                    (200, 120, 100), 3)
+    
         # Draw object points
         for point in object_points:
             cv2.circle(new_img, (point[0], point[1]), radius=2, color=(0, 0, 255), thickness=-1)
