@@ -262,7 +262,17 @@ class ViewerWindow(BaseWindow):
         count = 0
         self.scrollbar_images = []
         
+        imgs= []
         for filename in os.listdir(self.path+'/scans/raw'):
+            if filename.endswith("." + self.pripona) and 'scan_' in filename:  # Check for correct file extension
+                imgs.append(filename)
+        
+        try:
+            imgs.sort(key=lambda x: int(x.split('_')[1].split('.')[0]))
+        except:
+            pass
+        
+        for filename in imgs:
             if filename.endswith("." + self.pripona):  # Check for correct file extension
                 file_path = os.path.join(self.path, filename)
 
