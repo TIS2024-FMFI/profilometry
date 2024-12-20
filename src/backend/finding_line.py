@@ -2,6 +2,7 @@ import numpy as np
 import cv2
 import os
 from config import LINE_DETECTION
+from tkinter import messagebox
 
 class LineDetection:
     """To apply a new algorithm, set in the `apply_to_folder` method. 
@@ -30,65 +31,79 @@ class LineDetection:
         largest_points = []
         first_point = 0
 
+        high_exp = False
+        answer = True
+
         # Find highest pixels in each column
         for col in range(width):
             column_pixels = img[:, col]
             
-            # Check if the column has significant intensity
-            if np.max(column_pixels) < LINE_DETECTION['significant_threshold_pixel']:
-                continue  # Skip columns without a significant laser signal
+            if np.max(column_pixels) > LINE_DETECTION['significant_threshold_pixel_max'] and not high_exp:
+                answer = messagebox.askyesno("Warning", "The laser intensity is too high. Please adjust exposition. Do you want to save the image?")
+                high_exp = True
             
-            # Mask to focus on pixels above the threshold
-            laser_mask = column_pixels > LINE_DETECTION['significant_threshold_pixel']
-            intensity_sum = np.sum(column_pixels[laser_mask])
+            if answer:
+                # Check if the column has significant intensity
+                if np.max(column_pixels) < LINE_DETECTION['significant_threshold_pixel']:
+                    continue  # Skip columns without a significant laser signal
+                
+                # Mask to focus on pixels above the threshold
+                laser_mask = column_pixels > LINE_DETECTION['significant_threshold_pixel']
+                intensity_sum = np.sum(column_pixels[laser_mask])
+                
+                if intensity_sum == 0:
+                    continue  # Skip if no significant points after masking
+                
+                # Calculate weighted centroid of laser
+                indices = np.arange(height)[laser_mask]
+                weighted_sum = np.sum(indices * column_pixels[laser_mask])
+                centroid = int(weighted_sum / intensity_sum)
+
+                if first_point == 0:
+                    first_point = centroid
+                largest_points.append((col, centroid))
+
+        print(answer)
+        if answer:
+            new_img = np.zeros((height, width, 3), dtype=np.uint8)
+
+            reference_points = []
+            avg_reference = 0
+            object_points = []
+            for point in largest_points:
+                if abs(point[1] - first_point) < LINE_DETECTION['largest_points_threshold']:
+                    reference_points.append(point)
+                    avg_reference += point[1]
+                else:
+                    if point[1] > first_point:
+                        object_points.append(point)
             
-            if intensity_sum == 0:
-                continue  # Skip if no significant points after masking
+            # Draw reference line
+            if len(reference_points) > 0:
+                cv2.line(new_img, (0, avg_reference // len(reference_points)), 
+                        (img.shape[1], avg_reference // len(reference_points)), 
+                        (200, 120, 100), 3)
+        
+            # Draw object points
+            for point in object_points:
+                cv2.circle(new_img, (point[0], point[1]), radius=2, color=(0, 0, 255), thickness=-1)
+
+            # Calculate and store points
+            new_points = [(int(point[0]), int(point[1] * self.shift_count * self.constant), 
+                        int(point[1] - avg_reference // len(reference_points))) 
+                        for point in object_points]
+
+            self.all_points.append(np.array(new_points, np.int32))
             
-            # Calculate weighted centroid of laser
-            indices = np.arange(height)[laser_mask]
-            weighted_sum = np.sum(indices * column_pixels[laser_mask])
-            centroid = int(weighted_sum / intensity_sum)
-
-            if first_point == 0:
-                first_point = centroid
-            largest_points.append((col, centroid))
-
-        new_img = np.zeros((height, width, 3), dtype=np.uint8)
-
-        reference_points = []
-        avg_reference = 0
-        object_points = []
-        for point in largest_points:
-            if abs(point[1] - first_point) < LINE_DETECTION['largest_points_threshold']:
-                reference_points.append(point)
-                avg_reference += point[1]
-            else:
-                if point[1] > first_point:
-                    object_points.append(point)
+            for pnt in object_points:
+                self.all_points2.append((pnt[0], pnt[1] * self.shift_count * self.constant, 
+                                pnt[1] - avg_reference // len(reference_points)))
+            
+            self.shift_count += 1
+            return new_img
         
-        # Draw reference line
-        cv2.line(new_img, (0, avg_reference // len(reference_points)), 
-                 (img.shape[1], avg_reference // len(reference_points)), 
-                 (200, 120, 100), 3)
-
-        # Draw object points
-        for point in object_points:
-            cv2.circle(new_img, (point[0], point[1]), radius=2, color=(0, 0, 255), thickness=-1)
-
-        # Calculate and store points
-        new_points = [(int(point[0]), int(point[1] * self.shift_count * self.constant), 
-                       int(point[1] - avg_reference // len(reference_points))) 
-                      for point in object_points]
-
-        self.all_points.append(np.array(new_points, np.int32))
-        
-        for pnt in object_points:
-            self.all_points2.append((pnt[0], pnt[1] * self.shift_count * self.constant, 
-                             pnt[1] - avg_reference // len(reference_points)))
-        
-        self.shift_count += 1
-        return new_img
+        else:
+            return None
 
     def display_image(self, path):
         # Display processed image
@@ -100,7 +115,10 @@ class LineDetection:
         # Apply the algorithm to a single image
         
         img = self.find_line_alg1(image_path+ "/scans/raw/" + image)
-        cv2.imwrite(image_path + '/scans/processed/' + image, img)
+        if img is not None:
+            cv2.imwrite(image_path + '/scans/processed/' + image, img)
+        else:
+            os.remove(image_path+ "/scans/raw/" + image)
 
     def apply_to_folder(self):
         # Apply the algorithm to all images in the folder

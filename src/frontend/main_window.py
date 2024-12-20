@@ -3,6 +3,7 @@ import tkinter as tk
 from tkinter import ttk
 import sys
 import os
+import cv2
 
 # Add the parent directory to the system path for module imports
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -19,7 +20,8 @@ class MainWindow(BaseWindow):
         self.setup_window()
         self.setup_styles()
         self.show_main_menu()
-        
+        self.initialize_camera()
+
         self.actual_project = actual_project
 
     def setup_styles(self):
@@ -34,6 +36,22 @@ class MainWindow(BaseWindow):
         style.map('Custom.TButton',
                   background=[('active', '#2980b9')],
                   foreground=[('active', 'black')])
+
+    def initialize_camera(self):
+        """Initialize the camera and reset its settings to default."""
+        try:
+            self.cap = cv2.VideoCapture(0)
+            if self.cap.isOpened():
+                # Reset camera settings to default values
+                self.cap.set(cv2.CAP_PROP_BRIGHTNESS, -1)  # Default brightness
+                self.cap.set(cv2.CAP_PROP_CONTRAST, -1)    # Default contrast
+                self.cap.set(cv2.CAP_PROP_SATURATION, -1) # Default saturation
+                self.cap.set(cv2.CAP_PROP_GAIN, -1)       # Default gain (if applicable)
+                print("Camera initialized with original default settings.")
+            else:
+                print("Failed to access the camera.")
+        except Exception as e:
+            print(f"Error initializing camera: {e}")
 
     def setup_window(self):
         """Setup basic window properties such as size, title, and background"""
@@ -179,4 +197,4 @@ class MainWindow(BaseWindow):
     def handle_3d(self):
         """Handle the 'SHOW 3D MODEL' button click"""
         self.clear_window()
-        model3d = Model3D('images/skuska_obrazky/',self)
+        model3d = Model3D('', self, self.actual_project)
