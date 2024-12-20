@@ -17,6 +17,6 @@ BUTTON_CONFIG = {
 
 LINE_DETECTION = {
     'significant_threshold_pixel': 80,  # Minimum intensity to consider a pixel significant
-    'significant_threshold_pixel_max': 245,
+    'significant_threshold_pixel_max': 250,
     'largest_points_threshold': 30      # Maximum allowed deviation from the reference line
 }

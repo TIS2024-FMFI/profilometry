@@ -21,7 +21,7 @@ class LineDetection:
         self.all_points2 = []
         self.all_points2 = []
 
-    def find_line_alg1(self, img):
+    def find_line_alg1(self, img, scanning = False):
         # Detect the line using Algorithm 1
         if isinstance(img, str):
             img = cv2.imread(img)
@@ -38,7 +38,7 @@ class LineDetection:
         for col in range(width):
             column_pixels = img[:, col]
             
-            if np.max(column_pixels) > LINE_DETECTION['significant_threshold_pixel_max'] and not high_exp:
+            if np.max(column_pixels) > LINE_DETECTION['significant_threshold_pixel_max'] and not high_exp and scanning:
                 answer = messagebox.askyesno("Warning", "The laser intensity is too high. Please adjust exposition. Do you want to save the image?")
                 high_exp = True
             
@@ -63,7 +63,6 @@ class LineDetection:
                     first_point = centroid
                 largest_points.append((col, centroid))
 
-        print(answer)
         if answer:
             new_img = np.zeros((height, width, 3), dtype=np.uint8)
 
@@ -103,6 +102,8 @@ class LineDetection:
             return new_img
         
         else:
+            self.all_points = []
+            self.all_points2 = []
             return None
 
     def display_image(self, path):
@@ -111,14 +112,17 @@ class LineDetection:
         cv2.imshow("window", img)
         cv2.waitKey(0)
 
-    def apply_to_image(self, image_path, image):
+    def apply_to_image(self, image_path, image, scanning = False):
         # Apply the algorithm to a single image
         
-        img = self.find_line_alg1(image_path+ "/scans/raw/" + image)
-        if img is not None:
-            cv2.imwrite(image_path + '/scans/processed/' + image, img)
+        img = self.find_line_alg1(image_path+ "/scans/raw/" + image, scanning)
+        if scanning:
+            if img is not None:
+                cv2.imwrite(image_path + '/scans/processed/' + image, img)
+            else:
+                os.remove(image_path+ "/scans/raw/" + image)
         else:
-            os.remove(image_path+ "/scans/raw/" + image)
+            cv2.imwrite(image_path + '/scans/processed/' + image, img)
 
     def apply_to_folder(self):
         # Apply the algorithm to all images in the folder
