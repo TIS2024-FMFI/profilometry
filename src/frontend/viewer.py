@@ -88,6 +88,7 @@ class ViewerWindow(BaseWindow):
         def close_window(top):
             LINE_DETECTION['significant_threshold_pixel'] = int(significant_threshold_pixel_spinbox.get())
             LINE_DETECTION['largest_points_threshold'] = int(largest_points_threshold_spinbox.get())
+            LINE_DETECTION['significant_threshold_pixel_max'] = int(significant_threshold_pixel_spinbox_max.get())
             top.destroy()    
             self.use_algorithm_image_by_image()
         
@@ -97,8 +98,18 @@ class ViewerWindow(BaseWindow):
         label1 = tk.Label(frame1, text="Significant threshold pixel:")
         label1.pack(side=tk.LEFT, padx=5)
 
-        significant_threshold_pixel_spinbox = tk.Spinbox(frame1, from_=0, to=255, width=10, textvariable=tk.StringVar(value="80"))
+        significant_threshold_pixel_spinbox = tk.Spinbox(frame1, from_=0, to=255, width=10, textvariable=tk.StringVar(value=LINE_DETECTION["significant_threshold_pixel"]))
         significant_threshold_pixel_spinbox.pack(side=tk.LEFT)
+        
+        
+        frame3 = tk.Frame(top)
+        frame3.pack(pady=10)
+        
+        label3 = tk.Label(frame3, text="Max Significant threshold pixel:")
+        label3.pack(side=tk.LEFT, padx=5)
+        
+        significant_threshold_pixel_spinbox_max = tk.Spinbox(frame3, from_=0, to=255, width=10, textvariable=tk.StringVar(value=LINE_DETECTION["significant_threshold_pixel_max"]))
+        significant_threshold_pixel_spinbox_max.pack(side=tk.LEFT)
         
         
         frame2 = tk.Frame(top)
@@ -107,7 +118,7 @@ class ViewerWindow(BaseWindow):
         label2 = tk.Label(frame2, text="Largest points threshold:")
         label2.pack(side=tk.LEFT, padx=5)
         
-        largest_points_threshold_spinbox = tk.Spinbox(frame2, from_=0, to=255, width=10, textvariable=tk.StringVar(value="30"))
+        largest_points_threshold_spinbox = tk.Spinbox(frame2, from_=0, to=255, width=10, textvariable=tk.StringVar(value=LINE_DETECTION["largest_points_threshold"]))
         largest_points_threshold_spinbox.pack(side=tk.LEFT)
 
         close_button = tk.Button(top, text="Apply", command=lambda: close_window(top))
