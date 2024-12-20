@@ -75,10 +75,13 @@ class Model3D(BaseWindow):
 
     def setup_window(self):
         """Sets up the main window with toggle buttons for 3D Points and 3D Object."""
-        title = self.path.split("\\")[-1]
-        lbl = tk.Label(self.root.root, text="3D model "+title, font=('Arial 14')) 
-        lbl.config(bg='white')
-        lbl.place(x=550, y=50)
+        for widget in self.root.current_frame.winfo_children():
+            widget.destroy()
+        title_frame = tk.Frame(self.root.current_frame, bg='white')
+        title_frame.pack(side='top', pady=10)
+        title_label = tk.Label(title_frame, text="3D Model Viewer", font=('Arial', 16), bg='white')
+        title_label.pack(side='top', pady=(0, 5))
+
 
         self.figure = Figure(figsize=(10, 6), dpi=100)
         self.canvas = FigureCanvasTkAgg(self.figure, master=self.root.current_frame)
@@ -114,16 +117,21 @@ class Model3D(BaseWindow):
             ax.set_axis_off()
             self.canvas.draw()
 
-        button_frame = tk.Frame(self.root.root, bg='white')
+        button_frame = tk.Frame(self.root.current_frame, bg='white')
         button_frame.pack(fill='x', side='bottom', pady=10)
 
         # Back button
         def go_back():
             for widget in self.root.root.winfo_children():
                 widget.destroy()
-
             from frontend.main_window import MainWindow
             MainWindow(self.root.root, self.actual_project)
+        
+        button_style = {
+                "font": ('Arial', 14),
+                "width": 12,
+                "height": 2,
+            }
 
         # Highlight button on hover
         def set_button(relx, rely, text, command):
@@ -140,15 +148,42 @@ class Model3D(BaseWindow):
             
             button.place(relx=relx, rely=rely)
         
-        set_button(.13, .8, '3D Points', show_3d_points)
-        set_button(.23, .8, '3D Object', show_3d_object)
+        back_button = tk.Button(button_frame, text="Back", command=go_back, **button_style)
+        points_button = tk.Button(button_frame, text="3D Points", command=show_3d_points, **button_style)
+        object_button = tk.Button(button_frame, text="3D Object", command=show_3d_object, **button_style)
+
+        back_button.pack(side='left', padx=10)
+        points_button.pack(side='left', padx=10)
+        object_button.pack(side='left', padx=10)
+
+        # Default View
         show_3d_points()
-        set_button(.03,.8, 'Back', go_back)
+        set_button(.03,.8, 'Back', go_back)        
+        set_button(.13,.8, 'Show Points', show_3d_points)
+        set_button(.23,.8, 'Show Model', show_3d_object)
+
         
         self.root.root.state('zoomed')  # Maximize the window
         self.root.root.configure(bg='white')
         self.root.root.protocol("WM_DELETE_WINDOW", self.on_closing)  # Handle window close event   
 
+    def initialize_folder_processing(self, folder_path):
+        """Process the folder and perform additional operations specific to 3D visualiser."""
+        try:
+            self.path = folder_path
+            file_path = os.path.join(self.path, "points.txt")
+            if not os.path.exists(file_path):
+                raise FileNotFoundError(f"points.txt not found in {folder_path}")
+            for widget in self.root.current_frame.winfo_children():
+                widget.destroy()
+            self.setup_window()
+            print("3D model updated successfully.")
+    
+        except FileNotFoundError as e:
+            messagebox.showerror("File Not Found", str(e))
+        except Exception as e:
+            messagebox.showerror("Processing Error", f"An unexpected error occurred: {e}")
+    
     def export_file(self, format):
         """
         Exports the 3D object in the specified format (STL, OBJ, GLTF).
