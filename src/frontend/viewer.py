@@ -58,7 +58,11 @@ class ViewerWindow(BaseWindow):
 
 
     def open_project_f(self):
+        for widget in self.root.root.winfo_children():
+            widget.destroy()
+        
         self.open_project()
+        self.create_menu()
         self.actual_project = self.current_project
     
     # Create the application menu bar
@@ -275,7 +279,7 @@ class ViewerWindow(BaseWindow):
         
         imgs= []
         for filename in os.listdir(self.path+'/scans/raw'):
-            if filename.endswith("." + self.pripona) and 'scan_' in filename:  # Check for correct file extension
+            if filename.endswith("." + self.pripona):  # Check for correct file extension
                 imgs.append(filename)
         
         try:
