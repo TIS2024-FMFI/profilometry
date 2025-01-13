@@ -18,6 +18,7 @@ from frontend.base_window import BaseWindow
 class Model3D(BaseWindow):
     def __init__(self, path, root, actual_project):
         self.root = root
+        self.create_menu()
         if actual_project != None:
             self.path = actual_project.project_dir
         else:
@@ -27,7 +28,7 @@ class Model3D(BaseWindow):
             self.open_project()  
             self.actual_project = self.current_project 
             self.path = self.actual_project.project_dir
-        self.create_menu()
+        
         self.setup_window()
 
     def point_cloud(self):
