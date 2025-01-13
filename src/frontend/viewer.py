@@ -58,7 +58,11 @@ class ViewerWindow(BaseWindow):
 
 
     def open_project_f(self):
+        for widget in self.root.root.winfo_children():
+            widget.destroy()
+        
         self.open_project()
+        self.create_menu()
         self.actual_project = self.current_project
     
     # Create the application menu bar
@@ -88,6 +92,7 @@ class ViewerWindow(BaseWindow):
         def close_window(top):
             LINE_DETECTION['significant_threshold_pixel'] = int(significant_threshold_pixel_spinbox.get())
             LINE_DETECTION['largest_points_threshold'] = int(largest_points_threshold_spinbox.get())
+            LINE_DETECTION['significant_threshold_pixel_max'] = int(significant_threshold_pixel_spinbox_max.get())
             top.destroy()    
             self.use_algorithm_image_by_image()
         
@@ -97,8 +102,18 @@ class ViewerWindow(BaseWindow):
         label1 = tk.Label(frame1, text="Significant threshold pixel:")
         label1.pack(side=tk.LEFT, padx=5)
 
-        significant_threshold_pixel_spinbox = tk.Spinbox(frame1, from_=0, to=255, width=10, textvariable=tk.StringVar(value="80"))
+        significant_threshold_pixel_spinbox = tk.Spinbox(frame1, from_=0, to=255, width=10, textvariable=tk.StringVar(value=LINE_DETECTION["significant_threshold_pixel"]))
         significant_threshold_pixel_spinbox.pack(side=tk.LEFT)
+        
+        
+        frame3 = tk.Frame(top)
+        frame3.pack(pady=10)
+        
+        label3 = tk.Label(frame3, text="Max Significant threshold pixel:")
+        label3.pack(side=tk.LEFT, padx=5)
+        
+        significant_threshold_pixel_spinbox_max = tk.Spinbox(frame3, from_=0, to=255, width=10, textvariable=tk.StringVar(value=LINE_DETECTION["significant_threshold_pixel_max"]))
+        significant_threshold_pixel_spinbox_max.pack(side=tk.LEFT)
         
         
         frame2 = tk.Frame(top)
@@ -107,7 +122,7 @@ class ViewerWindow(BaseWindow):
         label2 = tk.Label(frame2, text="Largest points threshold:")
         label2.pack(side=tk.LEFT, padx=5)
         
-        largest_points_threshold_spinbox = tk.Spinbox(frame2, from_=0, to=255, width=10, textvariable=tk.StringVar(value="30"))
+        largest_points_threshold_spinbox = tk.Spinbox(frame2, from_=0, to=255, width=10, textvariable=tk.StringVar(value=LINE_DETECTION["largest_points_threshold"]))
         largest_points_threshold_spinbox.pack(side=tk.LEFT)
 
         close_button = tk.Button(top, text="Apply", command=lambda: close_window(top))
@@ -262,7 +277,17 @@ class ViewerWindow(BaseWindow):
         count = 0
         self.scrollbar_images = []
         
+        imgs= []
         for filename in os.listdir(self.path+'/scans/raw'):
+            if filename.endswith("." + self.pripona):  # Check for correct file extension
+                imgs.append(filename)
+        
+        try:
+            imgs.sort(key=lambda x: int(x.split('_')[1].split('.')[0]))
+        except:
+            pass
+        
+        for filename in imgs:
             if filename.endswith("." + self.pripona):  # Check for correct file extension
                 file_path = os.path.join(self.path, filename)
 
