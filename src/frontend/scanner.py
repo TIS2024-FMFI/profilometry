@@ -81,9 +81,15 @@ class Scanner(BaseWindow):
         )
         self.scan_button.pack(side=tk.LEFT, padx=10)
 
+        self.angle_button = tk.Button(
+            bottom_frame, text="Object shift", command=self.open_object_shift, font=("Arial", 12)
+        )
+        self.angle_button.pack(side=tk.LEFT, padx=10)
+
         # Initial tooltip text
         tooltip_text = "Space" if not self.scan_key else self.scan_key
         self.create_tooltip(self.scan_button, tooltip_text)
+
     def create_tooltip(self, widget, text):
         """Create a tooltip using a Label that appears when the mouse hovers over the widget."""
         tooltip = None
@@ -322,6 +328,7 @@ class Scanner(BaseWindow):
             self.cap.release()
         if self.canvas:
             self.canvas.delete("all")
+
     def back_to_main_menu(self):
         """Navigate back to the main menu."""
         # Stop stream
@@ -349,6 +356,7 @@ class Scanner(BaseWindow):
         self.main_window.root.destroy()
           
     def export_file(self, format): messagebox.showinfo("Export", f"Export as {format} coming soon!")
+
     def scan_profile(self): 
         if not hasattr(self, 'actual_project') or not getattr(self, 'actual_project', None):
             messagebox.showerror("Error", "First, open or create a project.")
@@ -382,6 +390,32 @@ class Scanner(BaseWindow):
             messagebox.showerror("Chyba", f"Chyba pri snímaní: {e}")
             return False
         
+    def open_object_shift(self):
+        """Opens a popup window for object angle shift."""
+        # Create a popup window
+        shift_window = tk.Toplevel(self.main_window.root)
+        shift_window.title("Object Shift")
+        shift_window.geometry("300x150")
+        
+        # Variable for the angle input
+        angle_value = tk.StringVar()
+        
+        # Input field for the angle
+        tk.Label(shift_window, text="Enter the angle at which you will shift the object:").pack(pady=10)
+        tk.Entry(shift_window, textvariable=angle_value).pack(pady=10)
+        
+        # Function to confirm and apply the angle
+        def apply_angle():
+            try:
+                angle = int(angle_value.get())  # Convert input to integer
+                messagebox.showinfo("Success", f"The object will be rotated by {angle} degrees.", parent=shift_window)
+                shift_window.destroy()
+            except ValueError:
+                messagebox.showerror("Error", "Please enter a valid integer value for the angle!", parent=shift_window)
+
+        # Confirmation button
+        tk.Button(shift_window, text="Apply", command=apply_angle).pack(pady=10)
+
     def initialize_counter(self, scans_path):
         """Initialize the counter based on the existing images in the scans_path."""
         if not os.path.exists(scans_path):
