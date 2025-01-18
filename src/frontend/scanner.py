@@ -47,7 +47,7 @@ class Scanner(BaseWindow):
         menubar.add_cascade(label="File", menu=file_menu)
         file_menu.add_command(label="Start Camera", command=self.start_camera_view)
         file_menu.add_command(label="Stop Camera", command=self.stop_stream)
-        file_menu.add_command(label="New Project", command=self.open_project_f)
+        file_menu.add_command(label="New Project", command=self.new_project)
         file_menu.add_command(label="Open Project", command=self.open_project_f)
         file_menu.add_command(label="Save Project", command=self.save_project)
         export_menu = Menu(file_menu, tearoff=0)

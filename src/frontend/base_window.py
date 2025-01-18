@@ -30,7 +30,6 @@ class BaseWindow:
         if project_name:
             try:
                 self.current_project = Project(project_name)
-                self.current_project.set_dir()
                 self.current_project.create_project()
                 messagebox.showinfo("Success", f"Project '{project_name}' created successfully!")
             except Exception as e:
