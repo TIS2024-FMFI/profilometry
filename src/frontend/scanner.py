@@ -390,6 +390,11 @@ class Scanner(BaseWindow):
         
     def open_object_shift(self):
         """Opens a popup window for object angle shift."""
+        # Check if project exists
+        if not hasattr(self, 'actual_project') or not getattr(self, 'actual_project', None):
+            messagebox.showerror("Error", "First, open or create a project.")
+            return
+
         # Create a popup window
         shift_window = tk.Toplevel(self.main_window.root)
         shift_window.title("Object Shift")
