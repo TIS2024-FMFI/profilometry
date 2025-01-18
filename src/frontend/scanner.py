@@ -20,6 +20,7 @@ class Scanner(BaseWindow):
         self.scan_key = "space"  # Default key for scanning
         super().__init__(main_window.root)
         self.counter = 0
+        self.angle = 0
 
         # Setup menu and initialize interface
         self.create_menu()
@@ -152,7 +153,7 @@ class Scanner(BaseWindow):
             return
 
         self.start_stream()
-        
+
     def detect_connected_camera(self):
         """Detect if a specific camera is connected, otherwise default to index 0."""
         connected_camera_id = "USB\\VID_32E4&PID_9320&MI_00\\7&29e53795&0&0000"
@@ -400,7 +401,6 @@ class Scanner(BaseWindow):
         shift_window.title("Object Shift")
         shift_window.geometry("300x150")
         
-        # Variable for the angle input
         angle_value = tk.StringVar()
         
         # Input field for the angle
@@ -410,8 +410,17 @@ class Scanner(BaseWindow):
         # Function to confirm and apply the angle
         def apply_angle():
             try:
-                angle = int(angle_value.get())  # Convert input to integer
-                messagebox.showinfo("Success", f"The object will be rotated by {angle} degrees.", parent=shift_window)
+                self.angle = int(angle_value.get())  # Convert input to integer
+
+                # Save the angle to a file
+                movement_parameters_path = os.path.join(self.actual_project.project_dir, "movement_parameters")
+                os.makedirs(movement_parameters_path, exist_ok=True)
+                file_path = os.path.join(movement_parameters_path, "movement_view1.txt")
+                
+                with open(file_path, "w") as file:
+                    file.write(f"{self.angle}")
+
+                messagebox.showinfo("Success", f"The object will be rotated by {self.angle} degrees.", parent=shift_window)
                 shift_window.destroy()
             except ValueError:
                 messagebox.showerror("Error", "Please enter a valid integer value for the angle!", parent=shift_window)
