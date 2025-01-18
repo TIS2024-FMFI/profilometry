@@ -20,7 +20,8 @@ class Scanner(BaseWindow):
         self.scan_key = "space"  # Default key for scanning
         super().__init__(main_window.root)
         self.counter = 0
-        self.angle = 0
+        self.angle = None
+        self.start_position = None
 
         # Setup menu and initialize interface
         self.create_menu()
@@ -60,6 +61,7 @@ class Scanner(BaseWindow):
         settings.add_command(label="Choose a Camera", command=self.choose_camera)
         settings.add_command(label="Camera Settings", command=self.open_camera_settings)
         settings.add_command(label="Calibration", command=self.calibration)
+        settings.add_command(label="Object shift", command=self.open_object_shift)
         settings.add_command(label="Set Scan Key Bind", command=self.open_scan_key_dialog)
 
     def create_bottom_strip(self):
@@ -78,11 +80,6 @@ class Scanner(BaseWindow):
             bottom_frame, text="Scan", command=self.scan_profile, font=("Arial", 12)
         )
         self.scan_button.pack(side=tk.LEFT, padx=10)
-
-        self.angle_button = tk.Button(
-            bottom_frame, text="Object shift", command=self.open_object_shift, font=("Arial", 12)
-        )
-        self.angle_button.pack(side=tk.LEFT, padx=10)
 
         # Initial tooltip text
         tooltip_text = "Space" if not self.scan_key else self.scan_key
@@ -400,33 +397,62 @@ class Scanner(BaseWindow):
         shift_window = tk.Toplevel(self.main_window.root)
         shift_window.title("Object Shift")
         shift_window.geometry("300x150")
-        
-        angle_value = tk.StringVar()
-        
-        # Input field for the angle
-        tk.Label(shift_window, text="Enter the angle at which you will shift the object:").pack(pady=10)
-        tk.Entry(shift_window, textvariable=angle_value).pack(pady=10)
-        
-        # Function to confirm and apply the angle
+
+        # Frame for the start position
+        frame_start = tk.Frame(shift_window)
+        frame_start.pack(pady=(20, 10))
+
+        tk.Label(frame_start, text="Start position of the object (mm):").pack(side=tk.LEFT, padx=5)
+        start_value_spinbox = tk.Spinbox(frame_start, from_=0, to=10000, width=10, textvariable=tk.StringVar(value=0))
+        start_value_spinbox.pack(side=tk.LEFT)
+
+        # Frame for the angle
+        frame_angle = tk.Frame(shift_window)
+        frame_angle.pack(pady=10)
+
+        tk.Label(frame_angle, text="Angle to shift the object (degrees):").pack(side=tk.LEFT, padx=5)
+        angle_value_spinbox = tk.Spinbox(frame_angle, from_=-360, to=360, width=10, textvariable=tk.StringVar(value=0))
+        angle_value_spinbox.pack(side=tk.LEFT)
+
+        # Function to confirm and apply the values
         def apply_angle():
             try:
-                self.angle = int(angle_value.get())  # Convert input to integer
-
-                # Save the angle to a file
+                # Check if both values are integer
+                try:
+                    start_position = int(start_value_spinbox.get())
+                except:
+                    raise ValueError("Start position must be an integer.")
+                
+                if start_position < 0:
+                    raise ValueError("Start position cannot be lower than 0.")
+                
+                try:
+                    angle = int(angle_value_spinbox.get())
+                except:
+                    raise ValueError("Angle must be an integer.")
+                
+                # Save the start_position and angle to a file
                 movement_parameters_path = os.path.join(self.actual_project.project_dir, "movement_parameters")
                 os.makedirs(movement_parameters_path, exist_ok=True)
                 file_path = os.path.join(movement_parameters_path, "movement_view1.txt")
                 
                 with open(file_path, "w") as file:
-                    file.write(f"{self.angle}")
+                    file.write(f"{start_position}, {angle}")
 
-                messagebox.showinfo("Success", f"The object will be rotated by {self.angle} degrees.", parent=shift_window)
+                self.start_position = start_position
+                self.angle = angle
+
+                messagebox.showinfo("Success", f"Object will start from: {self.start_position}mm\nIt will be repeatedly moved by: {self.angle}{chr(176)}", parent=shift_window)
                 shift_window.destroy()
-            except ValueError:
-                messagebox.showerror("Error", "Please enter a valid integer value for the angle!", parent=shift_window)
+            except ValueError as e:
+                messagebox.showerror("Error", str(e), parent=shift_window)
+            except Exception:
+                # Handle other errors
+                messagebox.showerror("Error", "An unknown error occurred. Please check your inputs.", parent=shift_window)
 
-        # Confirmation button
-        tk.Button(shift_window, text="Apply", command=apply_angle).pack(pady=10)
+        # Apply button
+        apply_button = tk.Button(shift_window, text="Apply", command=apply_angle)
+        apply_button.pack(pady=10)
 
     def initialize_counter(self, scans_path):
         """Initialize the counter based on the existing images in the scans_path."""
@@ -638,6 +664,7 @@ class Scanner(BaseWindow):
 
                 messagebox.showinfo("Kalibrácia", "Kalibrácia úspešne dokončená.")
                 dialog.destroy()
+                self.open_object_shift()
             else:
                 messagebox.showwarning("Nedokončená kalibrácia", "Je potrebné zachytiť 5 snímok.")
 
