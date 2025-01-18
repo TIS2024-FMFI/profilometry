@@ -4,6 +4,8 @@ import numpy as np
 from PIL import Image
 from datetime import datetime
 from tkinter import filedialog
+import json
+from config import LAST_PROJECT_FILE
 
 class Project:
     def __init__(self, project_name, base_dir=None):
@@ -23,6 +25,15 @@ class Project:
 
         self.project_dir = os.path.join(base_dir, self.project_name)
 
+    def save_last_project(self):
+        """Save the current project as the last opened project."""
+        summary_path = LAST_PROJECT_FILE['name']
+
+        normalized_project_dir = os.path.normpath(self.project_dir)
+
+        with open(summary_path, 'w') as file:
+            file.write(f"{normalized_project_dir}\n{self.project_name}")
+
     def create_project(self):
         """Create all required directories and files for the project."""
         required_dirs = [
@@ -38,6 +49,8 @@ class Project:
         summary_file = os.path.join(self.project_dir, 'project_summary.txt')
         if not os.path.exists(summary_file):
             open(summary_file, 'w').close()
+
+        self.save_last_project()
 
         # Print details of the created project
         print(f"Project '{self.project_name}' created successfully at '{self.project_dir}'.")

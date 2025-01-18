@@ -1,5 +1,9 @@
 # config.py
 
+LAST_PROJECT_FILE = {
+    'name': 'last_project.txt'
+}
+
 # Window configuration
 WINDOW_CONFIG = {
     'title': 'LaserScan Pro',  # Title of the main application window
