@@ -20,8 +20,6 @@ class Scanner(BaseWindow):
         self.scan_key = "space"  # Default key for scanning
         super().__init__(main_window.root)
         self.counter = 0
- 
-        
 
         # Setup menu and initialize interface
         self.create_menu()
@@ -54,7 +52,6 @@ class Scanner(BaseWindow):
         file_menu.add_separator()
         file_menu.add_command(label="Back to Main Menu", command=self.back_to_main_menu)
         file_menu.add_command(label="Exit", command=self.exit_application)
-
 
         # Capture Menu
         settings = Menu(menubar, tearoff=0)
@@ -155,6 +152,7 @@ class Scanner(BaseWindow):
             return
 
         self.start_stream()
+        
     def detect_connected_camera(self):
         """Detect if a specific camera is connected, otherwise default to index 0."""
         connected_camera_id = "USB\\VID_32E4&PID_9320&MI_00\\7&29e53795&0&0000"
