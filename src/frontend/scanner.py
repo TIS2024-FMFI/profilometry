@@ -355,7 +355,7 @@ class Scanner(BaseWindow):
 
     def scan_profile(self): 
         if not hasattr(self, 'actual_project') or not getattr(self, 'actual_project', None):
-            messagebox.showerror("Error", "First, open or create a project.")
+            messagebox.showerror("Error", "No project found. Please create or open a project.")
             return
         # Check existing calibration
         scans_path_basic = os.path.join(self.actual_project.project_dir)
@@ -390,7 +390,7 @@ class Scanner(BaseWindow):
         """Opens a popup window for object shift."""
         # Check if project exists
         if not hasattr(self, 'actual_project') or not getattr(self, 'actual_project', None):
-            messagebox.showerror("Error", "First, open or create a project.")
+            messagebox.showerror("Error", "No project found. Please create or open a project.")
             return
 
         # Create a popup window
