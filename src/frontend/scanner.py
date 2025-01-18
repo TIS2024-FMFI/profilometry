@@ -471,11 +471,6 @@ class Scanner(BaseWindow):
         
         self.counter = highest_number + 1
 
-    def browse_scans(self): messagebox.showinfo("Browse Scans", "Feature coming soon!")
-    def start_scan(self): messagebox.showinfo("Start Scan", "Feature coming soon!")
-    def stop_scan(self): messagebox.showinfo("Stop Scan", "Feature coming soon!")
-    def save_scan(self): messagebox.showinfo("Save Scan", "Feature coming soon!")
-
     def open_camera_settings(self):
         if not self.cap.isOpened():
             messagebox.showerror("Error", "Camera could not be opened.")
