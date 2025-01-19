@@ -652,10 +652,9 @@ class Scanner(BaseWindow):
             if len(scanned_images) == 5:
                 # Uloženie kalibračných údajov
                 calibration_file = os.path.join(calibration_path, "calibration_data.txt")
+                avg_distance = 0 ##TO DO
                 with open(calibration_file, "w") as f:
-                    f.write(f"Width of the object: {width} mm\n")
-                    f.write(f"Height of the object: {height} mm\n")
-                    f.write(f"Number of calibration scans: {len(scanned_images)}\n")
+                    f.write(f"{width}, {height}, {avg_distance}")
 
                 messagebox.showinfo("Kalibrácia", "Kalibrácia úspešne dokončená.")
                 dialog.destroy()
