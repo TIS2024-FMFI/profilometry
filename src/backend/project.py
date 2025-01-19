@@ -85,14 +85,4 @@ class Project:
         os.makedirs(raw_dir, exist_ok=True)
         os.makedirs(processed_dir, exist_ok=True)
 
-    def create_calibration_folders(self, view_name):
-        """Create subfolders for each calibration."""
-        calibration_dir = os.path.join(self.project_dir, 'calibration', view_name)
-        raw_dir = os.path.join(calibration_dir, 'raw')
-        processed_dir = os.path.join(calibration_dir, 'processed')
-        os.makedirs(raw_dir, exist_ok=True)
-        os.makedirs(processed_dir, exist_ok=True)
-        calibration_data_file = os.path.join(calibration_dir, 'calibration_data.txt')
-        if not os.path.exists(calibration_data_file):
-            open(calibration_data_file, 'w').close()
 
