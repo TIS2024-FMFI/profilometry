@@ -31,7 +31,7 @@ class Scanner(BaseWindow):
         # Set window properties
         self.main_window.root.state("zoomed")  # Start maximized
         self.main_window.root.minsize(1280, 720)  # Minimum size
-        self.main_window.root.bind("<space>", lambda event: self.start_scan())  # Bind default key
+        self.main_window.root.bind("<space>", lambda event: self.scan_profile())  # Bind default key
         self.setup_camera_view()
         self.create_bottom_strip()
 
@@ -127,7 +127,7 @@ class Scanner(BaseWindow):
             key = entry.get().strip()
             if len(key) == 1 and key.isalnum():
                 self.scan_key = key
-                self.main_window.root.bind(f"<{key}>", lambda event: self.start_scan())
+                self.main_window.root.bind(f"<{key}>", lambda event: self.scan_profile())
                 self.scan_button.config(text=f"Scan")
 
                 # Update the tooltip text dynamically
