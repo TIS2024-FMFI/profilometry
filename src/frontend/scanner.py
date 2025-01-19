@@ -358,9 +358,9 @@ class Scanner(BaseWindow):
         if not hasattr(self, 'actual_project') or not getattr(self, 'actual_project', None):
             messagebox.showerror("Error", "No project found. Please create or open a project.")
             return
-        # Check existing calibration
+        
         scans_path_basic = os.path.join(self.actual_project.project_dir)
-        ld = LineDetection(scans_path_basic, scans_path_basic + '/scans/processed', 1, extension="png")
+        ld = LineDetection(scans_path_basic, scans_path_basic + '/scans/processed/', 1, extension="png")
         scans_path = os.path.join(scans_path_basic, "scans", "raw")
 
         # Initialize counter based on existing files
@@ -508,6 +508,7 @@ class Scanner(BaseWindow):
         calibration_dialog.resizable(False, False)
 
         # Kontrola existujúcej kalibrácie
+        calibration_path_basic = os.path.join(self.actual_project.project_dir)
         calibration_path = os.path.join(self.actual_project.project_dir, "calibration")
         
         # Premenné pre kalibráciu
@@ -552,6 +553,9 @@ class Scanner(BaseWindow):
             os.makedirs(os.path.join(calibration_path, "raw"), exist_ok=True)
             os.makedirs(os.path.join(calibration_path, "processed"), exist_ok=True)
 
+            #Inicializácia line detektora (algoritmu na hľadanie čiary)
+            ld = LineDetection(calibration_path_basic, calibration_path_basic + '/calibration/processed/', 1, extension="png", raw_path="/calibration/raw/", processed_path = '/calibration/processed/')
+            
             # Spustenie skenovania
             self._run_calibration_scan(
                 calibration_path, 
@@ -560,7 +564,9 @@ class Scanner(BaseWindow):
                 scanned_images, 
                 progress_bar, 
                 scan_button, 
-                calibration_dialog
+                calibration_dialog,
+                ld,
+                calibration_path_basic
             )
 
         # Rozloženie widgetov
@@ -615,7 +621,7 @@ class Scanner(BaseWindow):
         except Exception as e:
             messagebox.showerror("Chyba", f"Nepodarilo sa vyčistiť existujúcu kalibráciu: {e}")
 
-    def _run_calibration_scan(self, calibration_path, width, height, scanned_images, progress_bar, scan_button, dialog):
+    def _run_calibration_scan(self, calibration_path, width, height, scanned_images, progress_bar, scan_button, dialog, ld, calibration_path_basic):
         """Spustenie kalibračného skenovania."""
         def capture_calibration_image():
             """Zachytenie jednej kalibračnej snímky."""
@@ -633,6 +639,8 @@ class Scanner(BaseWindow):
                 filename = f"cal_scan_{len(scanned_images) + 1}.png"
                 filepath = os.path.join(calibration_path, "raw", filename)
                 cv2.imwrite(filepath, frame)
+                ld.apply_to_image(calibration_path_basic, filename, True)
+                ld.write_points_to_file_app()
 
                 # Pridanie do zoznamu
                 scanned_images.append(filepath)
@@ -653,7 +661,7 @@ class Scanner(BaseWindow):
             if len(scanned_images) == CALIBRATION['count']:
                 # Uloženie kalibračných údajov
                 calibration_file = os.path.join(calibration_path, "calibration_data.txt")
-                avg_distance = 0 ##TO DO
+                avg_distance = 0
                 with open(calibration_file, "w") as f:
                     f.write(f"{width}, {height}, {avg_distance}\n")
 
