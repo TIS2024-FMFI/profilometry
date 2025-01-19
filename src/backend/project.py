@@ -4,6 +4,8 @@ import numpy as np
 from PIL import Image
 from datetime import datetime
 from tkinter import filedialog
+import json
+from config import LAST_PROJECT_FILE
 
 class Project:
     def __init__(self, project_name, base_dir=None):
@@ -23,6 +25,15 @@ class Project:
 
         self.project_dir = os.path.join(base_dir, self.project_name)
 
+    def save_last_project(self):
+        """Save the current project as the last opened project."""
+        summary_path = LAST_PROJECT_FILE['name']
+
+        normalized_project_dir = os.path.normpath(self.project_dir)
+
+        with open(summary_path, 'w') as file:
+            file.write(f"{normalized_project_dir}\n{self.project_name}")
+
     def create_project(self):
         """Create all required directories and files for the project."""
         required_dirs = [
@@ -38,6 +49,8 @@ class Project:
         summary_file = os.path.join(self.project_dir, 'project_summary.txt')
         if not os.path.exists(summary_file):
             open(summary_file, 'w').close()
+
+        self.save_last_project()
 
         # Print details of the created project
         print(f"Project '{self.project_name}' created successfully at '{self.project_dir}'.")
@@ -72,57 +85,4 @@ class Project:
         os.makedirs(raw_dir, exist_ok=True)
         os.makedirs(processed_dir, exist_ok=True)
 
-    def create_calibration_folders(self, view_name):
-        """Create subfolders for each calibration."""
-        calibration_dir = os.path.join(self.project_dir, 'calibration', view_name)
-        raw_dir = os.path.join(calibration_dir, 'raw')
-        processed_dir = os.path.join(calibration_dir, 'processed')
-        os.makedirs(raw_dir, exist_ok=True)
-        os.makedirs(processed_dir, exist_ok=True)
-        calibration_data_file = os.path.join(calibration_dir, 'calibration_data.txt')
-        if not os.path.exists(calibration_data_file):
-            open(calibration_data_file, 'w').close()
 
-    def save_scan(self, view_name, scan_image, is_processed=False):
-        """Save scan image in the appropriate directory."""
-        self.create_scan_folders(view_name)
-        folder = 'processed' if is_processed else 'raw'
-        target_dir = os.path.join(self.project_dir, 'scans', view_name, folder)
-        scan_count = len(os.listdir(target_dir)) + 1
-        scan_path = os.path.join(target_dir, f"scan{scan_count}.png")
-        scan_image.save(scan_path)
-
-    def save_calibration(self, view_name, calibration_image, is_processed=False):
-        """Save calibration image in the appropriate directory."""
-        self.create_calibration_folders(view_name)
-        folder = 'processed' if is_processed else 'raw'
-        target_dir = os.path.join(self.project_dir, 'calibration', view_name, folder)
-        cal_count = len(os.listdir(target_dir)) + 1
-        cal_path = os.path.join(target_dir, f"cal{cal_count}_scan{cal_count}.png")
-        calibration_image.save(cal_path)
-    
-    def get_raw_path(self, view_name):
-        """Get the path to the raw folder for a specific scan view."""
-        return os.path.join(self.project_dir, 'scans', view_name, 'raw')
-    
-    def get_processed_path(self, view_name):
-        """Get the path to the processed folder for a specific scan view."""
-        return os.path.join(self.project_dir, 'scans', view_name, 'processed')
-
-    def save_movement_parameters(self, view_name, movement_data):
-        """Save movement parameters in a text file."""
-        movement_dir = os.path.join(self.project_dir, 'movement_parameters')
-        os.makedirs(movement_dir, exist_ok=True)
-        movement_file = os.path.join(movement_dir, f"movement_{view_name}.txt")
-        with open(movement_file, 'w') as file:
-            file.write(movement_data)
-
-    def update_project_summary(self):
-        """Update the project summary file."""
-        summary_path = os.path.join(self.project_dir, 'project_summary.txt')
-        with open(summary_path, 'a') as file:
-            file.write(f"Project Name: {self.project_name}\n")
-            file.write(f"Scans saved: {len(os.listdir(os.path.join(self.project_dir, 'scans')))}\n")
-            file.write(f"Calibration data saved in: {os.path.join(self.project_dir, 'calibration')}\n")
-            file.write(f"Movement parameters saved in: {os.path.join(self.project_dir, 'movement_parameters')}\n")
-            file.write("\n")

@@ -8,6 +8,7 @@ import re
 import json
 from frontend.base_window import BaseWindow
 from backend.finding_line import LineDetection
+from config import CALIBRATION
 
 class Scanner(BaseWindow):
     def __init__(self, main_window, actual_project):
@@ -20,8 +21,9 @@ class Scanner(BaseWindow):
         self.scan_key = "space"  # Default key for scanning
         super().__init__(main_window.root)
         self.counter = 0
- 
-        
+        self.shift = None
+        self.start_position = None
+
 
         # Setup menu and initialize interface
         self.create_menu()
@@ -47,14 +49,12 @@ class Scanner(BaseWindow):
         menubar.add_cascade(label="File", menu=file_menu)
         file_menu.add_command(label="Start Camera", command=self.start_camera_view)
         file_menu.add_command(label="Stop Camera", command=self.stop_stream)
-        file_menu.add_command(label="New Project", command=self.open_project_f)
+        file_menu.add_command(label="New Project", command=self.new_project)
         file_menu.add_command(label="Open Project", command=self.open_project_f)
-        file_menu.add_command(label="Save Project", command=self.save_project)
         export_menu = Menu(file_menu, tearoff=0)
         file_menu.add_separator()
         file_menu.add_command(label="Back to Main Menu", command=self.back_to_main_menu)
         file_menu.add_command(label="Exit", command=self.exit_application)
-
 
         # Capture Menu
         settings = Menu(menubar, tearoff=0)
@@ -62,6 +62,7 @@ class Scanner(BaseWindow):
         settings.add_command(label="Choose a Camera", command=self.choose_camera)
         settings.add_command(label="Camera Settings", command=self.open_camera_settings)
         settings.add_command(label="Calibration", command=self.calibration)
+        settings.add_command(label="Object shift", command=self.open_object_shift)
         settings.add_command(label="Set Scan Key Bind", command=self.open_scan_key_dialog)
 
     def create_bottom_strip(self):
@@ -84,6 +85,7 @@ class Scanner(BaseWindow):
         # Initial tooltip text
         tooltip_text = "Space" if not self.scan_key else self.scan_key
         self.create_tooltip(self.scan_button, tooltip_text)
+
     def create_tooltip(self, widget, text):
         """Create a tooltip using a Label that appears when the mouse hovers over the widget."""
         tooltip = None
@@ -149,6 +151,7 @@ class Scanner(BaseWindow):
             return
 
         self.start_stream()
+
     def detect_connected_camera(self):
         """Detect if a specific camera is connected, otherwise default to index 0."""
         connected_camera_id = "USB\\VID_32E4&PID_9320&MI_00\\7&29e53795&0&0000"
@@ -322,6 +325,7 @@ class Scanner(BaseWindow):
             self.cap.release()
         if self.canvas:
             self.canvas.delete("all")
+
     def back_to_main_menu(self):
         """Navigate back to the main menu."""
         # Stop stream
@@ -349,9 +353,10 @@ class Scanner(BaseWindow):
         self.main_window.root.destroy()
           
     def export_file(self, format): messagebox.showinfo("Export", f"Export as {format} coming soon!")
+
     def scan_profile(self): 
         if not hasattr(self, 'actual_project') or not getattr(self, 'actual_project', None):
-            messagebox.showerror("Error", "First, open or create a project.")
+            messagebox.showerror("Error", "No project found. Please create or open a project.")
             return
         # Check existing calibration
         scans_path_basic = os.path.join(self.actual_project.project_dir)
@@ -382,6 +387,74 @@ class Scanner(BaseWindow):
             messagebox.showerror("Chyba", f"Chyba pri snímaní: {e}")
             return False
         
+    def open_object_shift(self):
+        """Opens a popup window for object shift."""
+        # Check if project exists
+        if not hasattr(self, 'actual_project') or not getattr(self, 'actual_project', None):
+            messagebox.showerror("Error", "No project found. Please create or open a project.")
+            return
+
+        # Create a popup window
+        shift_window = tk.Toplevel(self.main_window.root)
+        shift_window.title("Object Shift")
+        shift_window.geometry("450x150")
+
+        # Frame for the start position
+        frame_start = tk.Frame(shift_window)
+        frame_start.pack(pady=(20, 10))
+
+        tk.Label(frame_start, text="Object start position (hundredths of a millimeter):").pack(side=tk.LEFT, padx=5)
+        start_value_spinbox = tk.Spinbox(frame_start, from_=0, to=10000, width=10, textvariable=tk.StringVar(value=0))
+        start_value_spinbox.pack(side=tk.LEFT)
+
+        # Frame for the shift
+        frame_shift = tk.Frame(shift_window)
+        frame_shift.pack(pady=10)
+
+        tk.Label(frame_shift, text="Object shift between scans (hundredths of a millimeter):").pack(side=tk.LEFT, padx=5)
+        shift_value_spinbox = tk.Spinbox(frame_shift, from_=-360, to=360, width=10, textvariable=tk.StringVar(value=0))
+        shift_value_spinbox.pack(side=tk.LEFT)
+
+        # Function to confirm and apply the values
+        def apply_shift():
+            try:
+                # Check if both values are integer
+                try:
+                    start_position = int(start_value_spinbox.get())
+                except:
+                    raise ValueError("Start position must be an integer.")
+                
+                if start_position < 0:
+                    raise ValueError("Start position cannot be lower than 0.")
+                
+                try:
+                    shift = int(shift_value_spinbox.get())
+                except:
+                    raise ValueError("Object shift must be an integer.")
+                
+                # Save the start_position and shift to a file
+                movement_parameters_path = os.path.join(self.actual_project.project_dir, "movement_parameters")
+                os.makedirs(movement_parameters_path, exist_ok=True)
+                file_path = os.path.join(movement_parameters_path, "movement_view1.txt")
+                
+                with open(file_path, "w") as file:
+                    file.write(f"{start_position}, {shift}")
+
+                self.start_position = start_position
+                self.shift = shift
+
+                messagebox.showinfo("Success", f"Object will start from:\n{self.start_position} hundredths of a millimeter\nIt will be repeatedly moved by:\n{self.shift}hundredths of a millimeter", parent=shift_window)
+                shift_window.destroy()
+            except ValueError as e:
+                messagebox.showerror("Error", str(e), parent=shift_window)
+            except Exception:
+                # Handle other errors
+                messagebox.showerror("Error", "An unknown error occurred. Please check your inputs.", parent=shift_window)
+
+        # Apply button
+        apply_button = tk.Button(shift_window, text="Apply", command=apply_shift)
+        apply_button.pack(pady=10)
+
     def initialize_counter(self, scans_path):
         """Initialize the counter based on the existing images in the scans_path."""
         if not os.path.exists(scans_path):
@@ -398,11 +471,6 @@ class Scanner(BaseWindow):
                 highest_number = max(highest_number, number)
         
         self.counter = highest_number + 1
-
-    def browse_scans(self): messagebox.showinfo("Browse Scans", "Feature coming soon!")
-    def start_scan(self): messagebox.showinfo("Start Scan", "Feature coming soon!")
-    def stop_scan(self): messagebox.showinfo("Stop Scan", "Feature coming soon!")
-    def save_scan(self): messagebox.showinfo("Save Scan", "Feature coming soon!")
 
     def open_camera_settings(self):
         if not self.cap.isOpened():
@@ -582,24 +650,24 @@ class Scanner(BaseWindow):
 
         def finalize_calibration():
             """Finalizácia kalibračného procesu."""
-            if len(scanned_images) == 5:
+            if len(scanned_images) == CALIBRATION['count']:
                 # Uloženie kalibračných údajov
                 calibration_file = os.path.join(calibration_path, "calibration_data.txt")
+                avg_distance = 0 ##TO DO
                 with open(calibration_file, "w") as f:
-                    f.write(f"Width of the object: {width} mm\n")
-                    f.write(f"Height of the object: {height} mm\n")
-                    f.write(f"Number of calibration scans: {len(scanned_images)}\n")
+                    f.write(f"{width}, {height}, {avg_distance}\n")
 
                 messagebox.showinfo("Kalibrácia", "Kalibrácia úspešne dokončená.")
                 dialog.destroy()
+                self.open_object_shift()
             else:
-                messagebox.showwarning("Nedokončená kalibrácia", "Je potrebné zachytiť 5 snímok.")
+                messagebox.showwarning("Nedokončená kalibrácia", f"Je potrebné zachytiť {CALIBRATION['count']} snímok.")
 
         def on_scan_click():
             """Obsluha kliknutia na skenovanie."""
-            if len(scanned_images) < 5:
+            if len(scanned_images) < CALIBRATION['count']:
                 if capture_calibration_image():
-                    if len(scanned_images) == 5:
+                    if len(scanned_images) == CALIBRATION['count']:
                         scan_button.config(text="Dokončiť kalibráciu", command=finalize_calibration)
             else:
                 finalize_calibration()
