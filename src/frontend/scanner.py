@@ -8,6 +8,7 @@ import re
 import json
 from frontend.base_window import BaseWindow
 from backend.finding_line import LineDetection
+from config import CALIBRATION
 
 class Scanner(BaseWindow):
     def __init__(self, main_window, actual_project):
@@ -649,7 +650,7 @@ class Scanner(BaseWindow):
 
         def finalize_calibration():
             """Finalizácia kalibračného procesu."""
-            if len(scanned_images) == 5:
+            if len(scanned_images) == CALIBRATION['count']:
                 # Uloženie kalibračných údajov
                 calibration_file = os.path.join(calibration_path, "calibration_data.txt")
                 avg_distance = 0 ##TO DO
@@ -660,13 +661,13 @@ class Scanner(BaseWindow):
                 dialog.destroy()
                 self.open_object_shift()
             else:
-                messagebox.showwarning("Nedokončená kalibrácia", "Je potrebné zachytiť 5 snímok.")
+                messagebox.showwarning("Nedokončená kalibrácia", f"Je potrebné zachytiť {CALIBRATION['count']} snímok.")
 
         def on_scan_click():
             """Obsluha kliknutia na skenovanie."""
-            if len(scanned_images) < 5:
+            if len(scanned_images) < CALIBRATION['count']:
                 if capture_calibration_image():
-                    if len(scanned_images) == 5:
+                    if len(scanned_images) == CALIBRATION['count']:
                         scan_button.config(text="Dokončiť kalibráciu", command=finalize_calibration)
             else:
                 finalize_calibration()

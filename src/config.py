@@ -4,6 +4,10 @@ LAST_PROJECT_FILE = {
     'name': 'last_project.txt'
 }
 
+CALIBRATION = {
+    'count': 5
+}
+
 # Window configuration
 WINDOW_CONFIG = {
     'title': 'LaserScan Pro',  # Title of the main application window
