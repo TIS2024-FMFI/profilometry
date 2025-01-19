@@ -655,7 +655,7 @@ class Scanner(BaseWindow):
                 calibration_file = os.path.join(calibration_path, "calibration_data.txt")
                 avg_distance = 0 ##TO DO
                 with open(calibration_file, "w") as f:
-                    f.write(f"{width}, {height}, {avg_distance}")
+                    f.write(f"{width}, {height}, {avg_distance}\n")
 
                 messagebox.showinfo("Kalibrácia", "Kalibrácia úspešne dokončená.")
                 dialog.destroy()
