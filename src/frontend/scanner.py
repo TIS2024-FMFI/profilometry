@@ -9,13 +9,14 @@ import json
 from frontend.base_window import BaseWindow
 from backend.finding_line import LineDetection
 from config import CALIBRATION
+from pygrabber.dshow_graph import FilterGraph
 
 class Scanner(BaseWindow):
     def __init__(self, main_window, actual_project):
         self.main_window = main_window
         self.cap = None
         self.canvas = None
-        self.camera_index = self.detect_connected_camera()
+        self.camera_index = self.find_usb_devices_windows()
         self.running = False
         self.actual_project = actual_project
         self.scan_key = "space"  # Default key for scanning
@@ -34,6 +35,11 @@ class Scanner(BaseWindow):
         self.main_window.root.bind("<space>", lambda event: self.scan_profile())  # Bind default key
         self.setup_camera_view()
         self.create_bottom_strip()
+    
+    def new_project_f(self):
+        self.new_project()
+        self.actual_project = self.current_project 
+
 
     def open_project_f(self):
         self.open_project()
@@ -49,7 +55,7 @@ class Scanner(BaseWindow):
         menubar.add_cascade(label="File", menu=file_menu)
         file_menu.add_command(label="Start Camera", command=self.start_camera_view)
         file_menu.add_command(label="Stop Camera", command=self.stop_stream)
-        file_menu.add_command(label="New Project", command=self.new_project)
+        file_menu.add_command(label="New Project", command=self.new_project_f)
         file_menu.add_command(label="Open Project", command=self.open_project_f)
         export_menu = Menu(file_menu, tearoff=0)
         file_menu.add_separator()
@@ -64,6 +70,13 @@ class Scanner(BaseWindow):
         settings.add_command(label="Calibration", command=self.calibration)
         settings.add_command(label="Object shift", command=self.open_object_shift)
         settings.add_command(label="Set Scan Key Bind", command=self.open_scan_key_dialog)
+
+    def find_usb_devices_windows(self):
+        devices = FilterGraph().get_input_devices()
+        for device_index, device_name in enumerate(devices):
+            if device_name == "HD USB Camera":
+                return device_index
+        return 0
 
     def create_bottom_strip(self):
         """Add a strip at the bottom with a Scan button and a Back button on the left."""
@@ -152,26 +165,6 @@ class Scanner(BaseWindow):
 
         self.start_stream()
 
-    def detect_connected_camera(self):
-        """Detect if a specific camera is connected, otherwise default to index 0."""
-        connected_camera_id = "USB\\VID_32E4&PID_9320&MI_00\\7&29e53795&0&0000"
-        for index in range(10):  # Check up to 10 possible cameras
-            try:
-                cap = cv2.VideoCapture(index)
-                if cap.isOpened():
-                    name = f"Camera {index}"  # Placeholder for camera identification logic
-                    if connected_camera_id in name:  # Replace with actual identification logic if needed
-                        cap.release()
-                        return index
-                    cap.release()
-                else:
-                    cap.release()
-                    break
-            except Exception as e:
-                break
-
-        return 0  # Default to the first camera if the specific one isn't found
-
     def choose_camera(self):
         """Open a pop-up window to choose a camera."""
         dialog = tk.Toplevel(self.main_window.root)
@@ -186,44 +179,26 @@ class Scanner(BaseWindow):
         camera_list.heading("Index", text="Index")
         camera_list.heading("Name", text="Name")
         camera_list.column("Index", width=50, anchor="center")
-        camera_list.column("Name", width=300, anchor="w")
+        camera_list.column("Name", width=400, anchor="w")
         camera_list.pack(pady=10, fill=tk.BOTH, expand=True)
 
         select_button = tk.Button(dialog, text="Select", font=("Arial", 12), state=tk.DISABLED, command=lambda: self.on_camera_select(camera_list, dialog))
         select_button.pack(pady=10)
 
         def detect_cameras():
-            connected_camera_id = "USB\\VID_32E4&PID_9320&MI_00\\7&29e53795&0&0000"
-            preselect_index = None
+            graph = FilterGraph()
+            devices = graph.get_input_devices()
 
-            for index in range(10):
-                try:
-                    cap = cv2.VideoCapture(index, cv2.CAP_DSHOW)
-                    if cap.isOpened():
-                        name = f"Camera {index}"
-                        if connected_camera_id in name:
-                            name += " (Connected)"
-                            preselect_index = index
-
-                        # Update the UI with the detected camera
-                        camera_list.insert("", "end", values=(index, name))
-                        cap.release()
-                    else:
-                        cap.release()
-                        break
-                except Exception as e:
-                    break
-
-            # Preselect the connected camera if found
-            if preselect_index is not None:
-                for child in camera_list.get_children():
-                    if camera_list.item(child, "values")[0] == str(preselect_index):
-                        camera_list.selection_set(child)
-                        break
+            # Populate the Treeview with available cameras
+            for index, device_name in enumerate(devices):
+                camera_list.insert("", "end", values=(index, device_name))
 
             # Enable the Select button and update the label
-            select_button.config(state=tk.NORMAL)
-            label.config(text="Select a camera from the list:")
+            if devices:
+                label.config(text="Select a camera from the list:")
+                select_button.config(state=tk.NORMAL)
+            else:
+                label.config(text="No cameras detected.")
 
         # Start the detection thread
         Thread(target=detect_cameras, daemon=True).start()
@@ -241,6 +216,7 @@ class Scanner(BaseWindow):
 
         values = camera_list.item(selected, "values")
         self.camera_index = int(values[0])
+        self.start_camera_view()
         messagebox.showinfo("Camera Selected", f"Selected Camera: {values[1]}")
         dialog.destroy()
 
