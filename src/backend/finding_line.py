@@ -177,16 +177,40 @@ class LineDetection:
     
     
     def write_points_to_file(self):
-        if self.raw_path == "/scans/raw":
-            with open(self.project_path+'/points.txt', mode = 'w') as file:
-                for i in self.all_points2:
-                    print(f'{i[0]} {i[1]} {i[2]}', file = file)
+        name = '/points.txt'
+        if self.raw_path == "/calibration/raw/":
+            name = '/calibration/points.txt'
+            path_name = os.path.join(self.project_path, "/calibration/avg_references.txt")
+            with open(os.path.normpath(path_name), mode = 'w') as file:
+                print(f'{self.reference}', file = file)
+        path_name = os.path.join(self.project_path, name)
+        with open(os.path.normpath(path_name), mode = 'w') as file:
+            for i in self.all_points2:
+                print(f'{i[0]} {i[1]} {i[2]}', file = file)
+    
     
     def write_points_to_file_app(self):
-        if self.raw_path == "/scans/raw":
-            try:
-                with open(self.project_path+'/points.txt', mode = 'a') as file:
-                    for i in self.all_points2:
-                        print(f'{i[0]} {i[1]} {i[2]}', file = file)
-            except:
-                pass
+        # Determine file paths based on the raw_path value
+        if self.raw_path == "/calibration/raw/":
+            file_name = 'calibration/calibration_points.txt'
+            avg_ref_file = 'calibration/avg_references.txt'
+
+            # Ensure avg_references.txt exists
+            avg_ref_path = os.path.join(self.project_path, avg_ref_file)
+            if not os.path.exists(avg_ref_path):
+                open(avg_ref_path, 'w').close()
+            with open(os.path.normpath(avg_ref_path), 'a') as file:
+                print(f'{self.reference}', file=file)
+
+        else:
+            file_name = 'points.txt'
+
+        # Ensure the target file exists
+        target_path = os.path.join(self.project_path, file_name)
+        if not os.path.exists(target_path):
+            open(target_path, 'w').close()
+
+        # Write all points to the target file
+        with open(os.path.normpath(target_path), 'a') as file:
+            for point in self.all_points2:
+                print(f'{point[0]} {point[1]} {point[2]}', file=file)
