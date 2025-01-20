@@ -21,7 +21,7 @@ class LineDetection:
         self.shift_count = 1
         self.all_points = []
         self.all_points2 = []
-        self.all_points2 = []
+        self.reference = 0
 
     def find_line_alg1(self, img, scanning = False):
         # Detect the line using Algorithm 1
@@ -78,7 +78,9 @@ class LineDetection:
                 else:
                     if point[1] > first_point:
                         object_points.append(point)
-            
+
+            self.reference = avg_reference // len(reference_points)
+
             # Draw reference line
             if len(reference_points) > 0:
                 cv2.line(new_img, (0, avg_reference // len(reference_points)), 
@@ -99,7 +101,7 @@ class LineDetection:
             for pnt in object_points:
                 self.all_points2.append((pnt[0], pnt[1] * self.shift_count * self.constant, 
                                 pnt[1] - avg_reference // len(reference_points)))
-            
+
             self.shift_count += 1
             return new_img
         
