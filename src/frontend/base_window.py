@@ -31,6 +31,7 @@ class BaseWindow:
             try:
                 self.current_project = Project(project_name)
                 self.current_project.create_project()
+                self.current_project.create_scan_folders(self.current_project.project_dir+'/scans')
                 messagebox.showinfo("Success", f"Project '{project_name}' created successfully!")
             except Exception as e:
                 messagebox.showerror("Error", f"Failed to create project: {e}")

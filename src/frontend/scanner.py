@@ -9,13 +9,14 @@ import numpy as np
 from frontend.base_window import BaseWindow
 from backend.finding_line import LineDetection
 from config import CALIBRATION
+from pygrabber.dshow_graph import FilterGraph
 
 class Scanner(BaseWindow):
     def __init__(self, main_window, actual_project):
         self.main_window = main_window
         self.cap = None
         self.canvas = None
-        self.camera_index = self.detect_connected_camera()
+        self.camera_index = self.find_usb_devices_windows()
         self.running = False
         self.actual_project = actual_project
         self.scan_key = "space"  # Default key for scanning
@@ -23,6 +24,7 @@ class Scanner(BaseWindow):
         self.counter = 0
         self.shift = None
         self.start_position = None
+        
 
 
         # Setup menu and initialize interface
@@ -34,10 +36,52 @@ class Scanner(BaseWindow):
         self.main_window.root.bind("<space>", lambda event: self.scan_profile())  # Bind default key
         self.setup_camera_view()
         self.create_bottom_strip()
+        
+    
+    def new_project_f(self):
+        self.new_project()
+        self.actual_project = self.current_project
+        raw_scans_path = os.path.join(self.actual_project.project_dir, "scans", "raw")
+        self.shift = None
+        self.start_position = None
+        if os.path.isdir(raw_scans_path):
+            self.initialize_counter(raw_scans_path) 
+        self.display_message_in_bottom_strip_about_scan_position()
+
 
     def open_project_f(self):
         self.open_project()
-        self.actual_project = self.current_project 
+        self.actual_project = self.current_project
+        self.initialize_counter(os.path.join(self.actual_project.project_dir, "scans", "raw"))
+        self.display_message_in_bottom_strip_about_scan_position()
+
+    def get_movement_parameters(self):
+        # Construct the path to the file
+        folder_path = os.path.join(self.actual_project.project_dir, "movement_parameters")
+        file_path = os.path.join(folder_path, "movement_view1.txt")
+        
+        # Check if folder and file exist
+        if not os.path.exists(folder_path) or not os.path.exists(file_path):
+            return False
+        
+        try:
+            # Open and read the file
+            with open(file_path, 'r') as file:
+                content = file.read().strip()
+                
+            # Split content by comma and convert to numbers
+            values = content.split(',')
+            if len(values) != 2:
+                return False
+                
+            # Convert to integers and remove whitespace
+            param1 = int(values[0].strip())
+            param2 = int(values[1].strip())
+            
+            return param1, param2
+            
+        except (ValueError, IOError):
+            return False
 
     def create_menu(self):
         """Create the menu bar."""
@@ -49,7 +93,7 @@ class Scanner(BaseWindow):
         menubar.add_cascade(label="File", menu=file_menu)
         file_menu.add_command(label="Start Camera", command=self.start_camera_view)
         file_menu.add_command(label="Stop Camera", command=self.stop_stream)
-        file_menu.add_command(label="New Project", command=self.new_project)
+        file_menu.add_command(label="New Project", command=self.new_project_f)
         file_menu.add_command(label="Open Project", command=self.open_project_f)
         export_menu = Menu(file_menu, tearoff=0)
         file_menu.add_separator()
@@ -64,6 +108,13 @@ class Scanner(BaseWindow):
         settings.add_command(label="Calibration", command=self.calibration)
         settings.add_command(label="Object shift", command=self.open_object_shift)
         settings.add_command(label="Set Scan Key Bind", command=self.open_scan_key_dialog)
+
+    def find_usb_devices_windows(self):
+        devices = FilterGraph().get_input_devices()
+        for device_index, device_name in enumerate(devices):
+            if device_name == "HD USB Camera":
+                return device_index
+        return 0
 
     def create_bottom_strip(self):
         """Add a strip at the bottom with a Scan button and a Back button on the left."""
@@ -82,9 +133,42 @@ class Scanner(BaseWindow):
         )
         self.scan_button.pack(side=tk.LEFT, padx=10)
 
-        # Initial tooltip text
-        tooltip_text = "Space" if not self.scan_key else self.scan_key
+        # Conditional messages and calibration setup
+        self.message_label = tk.Label(bottom_frame, font=("Arial", 10), bg="#eeeeee", fg="#333333")
+        self.message_label.pack(side=tk.LEFT, padx=20)
+
+        self.display_message_in_bottom_strip_about_scan_position()
+
+        # Initial tooltip text for the scan button
+        tooltip_text = "Space" if not hasattr(self, 'scan_key') or not self.scan_key else self.scan_key
         self.create_tooltip(self.scan_button, tooltip_text)
+
+    def display_message_in_bottom_strip_about_scan_position(self):
+        if not hasattr(self, 'actual_project') or not getattr(self, 'actual_project', None):
+            # Case: No project loaded or created
+            self.message_label.config(
+                text="First, open or create a new project to manage scans."
+            )
+            self.scan_button.config(state=tk.DISABLED)
+        else:
+            result = self.get_movement_parameters()
+            if result:
+                self.start_position, self.shift = result
+            if not hasattr(self, 'shift') or self.shift is None:
+                # Case: Calibration needed
+                self.message_label.config(
+                    text="Perform calibration to define the movement distance (in hundredths of a millimeter)."
+                )
+                self.scan_button.config(state=tk.DISABLED)
+            else:
+                raw_scans_path = os.path.join(self.actual_project.project_dir, "scans", "raw")
+                if os.path.isdir(raw_scans_path):
+                    self.initialize_counter(raw_scans_path) 
+                # Case: Ready to scan
+                self.message_label.config(
+                    text=f"Scanning scan number {self.counter}, shifted by {self.start_position+((self.counter-1)*self.shift)} hundredths of a millimeter."
+                )
+                self.scan_button.config(state=tk.NORMAL)
 
     def create_tooltip(self, widget, text):
         """Create a tooltip using a Label that appears when the mouse hovers over the widget."""
@@ -145,32 +229,11 @@ class Scanner(BaseWindow):
     def start_camera_view(self):
         """Initialize the camera view."""
         self.cap = cv2.VideoCapture(self.camera_index, cv2.CAP_DSHOW)
-        print()
         if not self.cap.isOpened():
             messagebox.showerror("Error", "Unable to access camera.")
             return
 
         self.start_stream()
-
-    def detect_connected_camera(self):
-        """Detect if a specific camera is connected, otherwise default to index 0."""
-        connected_camera_id = "USB\\VID_32E4&PID_9320&MI_00\\7&29e53795&0&0000"
-        for index in range(10):  # Check up to 10 possible cameras
-            try:
-                cap = cv2.VideoCapture(index)
-                if cap.isOpened():
-                    name = f"Camera {index}"  # Placeholder for camera identification logic
-                    if connected_camera_id in name:  # Replace with actual identification logic if needed
-                        cap.release()
-                        return index
-                    cap.release()
-                else:
-                    cap.release()
-                    break
-            except Exception as e:
-                break
-
-        return 0  # Default to the first camera if the specific one isn't found
 
     def choose_camera(self):
         """Open a pop-up window to choose a camera."""
@@ -186,44 +249,26 @@ class Scanner(BaseWindow):
         camera_list.heading("Index", text="Index")
         camera_list.heading("Name", text="Name")
         camera_list.column("Index", width=50, anchor="center")
-        camera_list.column("Name", width=300, anchor="w")
+        camera_list.column("Name", width=400, anchor="w")
         camera_list.pack(pady=10, fill=tk.BOTH, expand=True)
 
         select_button = tk.Button(dialog, text="Select", font=("Arial", 12), state=tk.DISABLED, command=lambda: self.on_camera_select(camera_list, dialog))
         select_button.pack(pady=10)
 
         def detect_cameras():
-            connected_camera_id = "USB\\VID_32E4&PID_9320&MI_00\\7&29e53795&0&0000"
-            preselect_index = None
+            graph = FilterGraph()
+            devices = graph.get_input_devices()
 
-            for index in range(10):
-                try:
-                    cap = cv2.VideoCapture(index, cv2.CAP_DSHOW)
-                    if cap.isOpened():
-                        name = f"Camera {index}"
-                        if connected_camera_id in name:
-                            name += " (Connected)"
-                            preselect_index = index
-
-                        # Update the UI with the detected camera
-                        camera_list.insert("", "end", values=(index, name))
-                        cap.release()
-                    else:
-                        cap.release()
-                        break
-                except Exception as e:
-                    break
-
-            # Preselect the connected camera if found
-            if preselect_index is not None:
-                for child in camera_list.get_children():
-                    if camera_list.item(child, "values")[0] == str(preselect_index):
-                        camera_list.selection_set(child)
-                        break
+            # Populate the Treeview with available cameras
+            for index, device_name in enumerate(devices):
+                camera_list.insert("", "end", values=(index, device_name))
 
             # Enable the Select button and update the label
-            select_button.config(state=tk.NORMAL)
-            label.config(text="Select a camera from the list:")
+            if devices:
+                label.config(text="Select a camera from the list:")
+                select_button.config(state=tk.NORMAL)
+            else:
+                label.config(text="No cameras detected.")
 
         # Start the detection thread
         Thread(target=detect_cameras, daemon=True).start()
@@ -241,6 +286,7 @@ class Scanner(BaseWindow):
 
         values = camera_list.item(selected, "values")
         self.camera_index = int(values[0])
+        self.start_camera_view()
         messagebox.showinfo("Camera Selected", f"Selected Camera: {values[1]}")
         dialog.destroy()
 
@@ -374,13 +420,16 @@ class Scanner(BaseWindow):
                 return False
 
             # Uloženie snímky do raw adresára
-            filename = f"scan_{self.counter}.png"
-            self.counter = self.counter + 1
+            filename = f"{self.counter}_scan_{self.start_position+((self.counter-1)*self.shift)}.png"
             filepath = os.path.join(scans_path, filename)
             cv2.imwrite(filepath, frame)
-            ld.apply_to_image(scans_path_basic, filename, True)
+            result = ld.apply_to_image(scans_path_basic, filename, True)
+            print(result)
+            if result == False:
+                return False
+            cv2.imwrite(filepath, frame)
             ld.write_points_to_file_app()
-
+            self.display_message_in_bottom_strip_about_scan_position()
 
             return True
         except Exception as e:
@@ -443,6 +492,8 @@ class Scanner(BaseWindow):
                 self.start_position = start_position
                 self.shift = shift
 
+                self.display_message_in_bottom_strip_about_scan_position()
+
                 messagebox.showinfo("Success", f"Object will start from:\n{self.start_position}  hundredths of a millimeter\n\nIt will be repeatedly moved by:\n{self.shift}  hundredths of a millimeter", parent=shift_window)
                 shift_window.destroy()
             except ValueError as e:
@@ -456,21 +507,26 @@ class Scanner(BaseWindow):
         apply_button.pack(pady=10)
 
     def initialize_counter(self, scans_path):
-        """Initialize the counter based on the existing images in the scans_path."""
+        """Initialize the counter to find the smallest missing scan number."""
         if not os.path.exists(scans_path):
             os.makedirs(scans_path)
 
-        existing_files = [f for f in os.listdir(scans_path) if f.startswith("scan_") and f.endswith(".png")]
-        
-        # Extract numbers from filenames like scan_1.png, scan_2.png
-        highest_number = 0
+        # Collect files matching the pattern "N_scan_*.png"
+        existing_files = [f for f in os.listdir(scans_path) if re.match(r"\d+_scan_\d+\.png", f)]
+
+        # Extract the first number (N) from filenames like "7_scan_3500.png"
+        scanned_numbers = set()
         for file in existing_files:
-            match = re.match(r"scan_(\d+)\.png", file)
+            match = re.match(r"(\d+)_scan_\d+\.png", file)
             if match:
-                number = int(match.group(1))
-                highest_number = max(highest_number, number)
-        
-        self.counter = highest_number + 1
+                scanned_numbers.add(int(match.group(1)))
+
+        # Find the smallest missing number
+        smallest_missing = 1
+        while smallest_missing in scanned_numbers:
+            smallest_missing += 1
+
+        self.counter = smallest_missing
 
     def open_camera_settings(self):
         if not self.cap.isOpened():
@@ -640,10 +696,13 @@ class Scanner(BaseWindow):
                 if not ret:
                     messagebox.showerror("Error", "Scan could not be captured.")
                     return False
-
                 # Uloženie snímky do raw adresára
                 filename = f"cal_scan_{len(scanned_images) + 1}.png"
                 filepath = os.path.join(calibration_path, "raw", filename)
+                cv2.imwrite(filepath, frame)
+                result = ld.apply_to_image(calibration_path_basic, filename, True)
+                if result == False:
+                    return False
                 cv2.imwrite(filepath, frame)
                 ld.apply_to_image(calibration_path_basic, filename, True)
                 ld.write_points_to_file_app()
