@@ -24,6 +24,7 @@ class Scanner(BaseWindow):
         self.counter = 0
         self.shift = None
         self.start_position = None
+        
 
 
         # Setup menu and initialize interface
@@ -35,15 +36,52 @@ class Scanner(BaseWindow):
         self.main_window.root.bind("<space>", lambda event: self.scan_profile())  # Bind default key
         self.setup_camera_view()
         self.create_bottom_strip()
+        
     
     def new_project_f(self):
         self.new_project()
-        self.actual_project = self.current_project 
+        self.actual_project = self.current_project
+        raw_scans_path = os.path.join(self.actual_project.project_dir, "scans", "raw")
+        self.shift = None
+        self.start_position = None
+        if os.path.isdir(raw_scans_path):
+            self.initialize_counter(raw_scans_path) 
+        self.display_message_in_bottom_strip_about_scan_position()
 
 
     def open_project_f(self):
         self.open_project()
-        self.actual_project = self.current_project 
+        self.actual_project = self.current_project
+        self.initialize_counter(os.path.join(self.actual_project.project_dir, "scans", "raw"))
+        self.display_message_in_bottom_strip_about_scan_position()
+
+    def get_movement_parameters(self):
+        # Construct the path to the file
+        folder_path = os.path.join(self.actual_project.project_dir, "movement_parameters")
+        file_path = os.path.join(folder_path, "movement_view1.txt")
+        
+        # Check if folder and file exist
+        if not os.path.exists(folder_path) or not os.path.exists(file_path):
+            return False
+        
+        try:
+            # Open and read the file
+            with open(file_path, 'r') as file:
+                content = file.read().strip()
+                
+            # Split content by comma and convert to numbers
+            values = content.split(',')
+            if len(values) != 2:
+                return False
+                
+            # Convert to integers and remove whitespace
+            param1 = int(values[0].strip())
+            param2 = int(values[1].strip())
+            
+            return param1, param2
+            
+        except (ValueError, IOError):
+            return False
 
     def create_menu(self):
         """Create the menu bar."""
@@ -95,9 +133,42 @@ class Scanner(BaseWindow):
         )
         self.scan_button.pack(side=tk.LEFT, padx=10)
 
-        # Initial tooltip text
-        tooltip_text = "Space" if not self.scan_key else self.scan_key
+        # Conditional messages and calibration setup
+        self.message_label = tk.Label(bottom_frame, font=("Arial", 10), bg="#eeeeee", fg="#333333")
+        self.message_label.pack(side=tk.LEFT, padx=20)
+
+        self.display_message_in_bottom_strip_about_scan_position()
+
+        # Initial tooltip text for the scan button
+        tooltip_text = "Space" if not hasattr(self, 'scan_key') or not self.scan_key else self.scan_key
         self.create_tooltip(self.scan_button, tooltip_text)
+
+    def display_message_in_bottom_strip_about_scan_position(self):
+        if not hasattr(self, 'actual_project') or not getattr(self, 'actual_project', None):
+            # Case: No project loaded or created
+            self.message_label.config(
+                text="First, open or create a new project to manage scans."
+            )
+            self.scan_button.config(state=tk.DISABLED)
+        else:
+            result = self.get_movement_parameters()
+            if result:
+                self.start_position, self.shift = result
+            if not hasattr(self, 'shift') or self.shift is None:
+                # Case: Calibration needed
+                self.message_label.config(
+                    text="Perform calibration to define the movement distance (in hundredths of a millimeter)."
+                )
+                self.scan_button.config(state=tk.DISABLED)
+            else:
+                raw_scans_path = os.path.join(self.actual_project.project_dir, "scans", "raw")
+                if os.path.isdir(raw_scans_path):
+                    self.initialize_counter(raw_scans_path) 
+                # Case: Ready to scan
+                self.message_label.config(
+                    text=f"Scanning scan number {self.counter}, shifted by {self.start_position+((self.counter-1)*self.shift)} hundredths of a millimeter."
+                )
+                self.scan_button.config(state=tk.NORMAL)
 
     def create_tooltip(self, widget, text):
         """Create a tooltip using a Label that appears when the mouse hovers over the widget."""
@@ -158,7 +229,6 @@ class Scanner(BaseWindow):
     def start_camera_view(self):
         """Initialize the camera view."""
         self.cap = cv2.VideoCapture(self.camera_index, cv2.CAP_DSHOW)
-        print()
         if not self.cap.isOpened():
             messagebox.showerror("Error", "Unable to access camera.")
             return
@@ -350,13 +420,12 @@ class Scanner(BaseWindow):
                 return False
 
             # Uloženie snímky do raw adresára
-            filename = f"scan_{self.counter}.png"
-            self.counter = self.counter + 1
+            filename = f"{self.counter}_scan_{self.start_position+((self.counter-1)*self.shift)}.png"
             filepath = os.path.join(scans_path, filename)
             cv2.imwrite(filepath, frame)
             ld.apply_to_image(scans_path_basic, filename, True)
             ld.write_points_to_file_app()
-
+            self.display_message_in_bottom_strip_about_scan_position()
 
             return True
         except Exception as e:
@@ -419,6 +488,8 @@ class Scanner(BaseWindow):
                 self.start_position = start_position
                 self.shift = shift
 
+                self.display_message_in_bottom_strip_about_scan_position()
+
                 messagebox.showinfo("Success", f"Object will start from:\n{self.start_position} hundredths of a millimeter\nIt will be repeatedly moved by:\n{self.shift}hundredths of a millimeter", parent=shift_window)
                 shift_window.destroy()
             except ValueError as e:
@@ -432,21 +503,26 @@ class Scanner(BaseWindow):
         apply_button.pack(pady=10)
 
     def initialize_counter(self, scans_path):
-        """Initialize the counter based on the existing images in the scans_path."""
+        """Initialize the counter to find the smallest missing scan number."""
         if not os.path.exists(scans_path):
             os.makedirs(scans_path)
 
-        existing_files = [f for f in os.listdir(scans_path) if f.startswith("scan_") and f.endswith(".png")]
-        
-        # Extract numbers from filenames like scan_1.png, scan_2.png
-        highest_number = 0
+        # Collect files matching the pattern "N_scan_*.png"
+        existing_files = [f for f in os.listdir(scans_path) if re.match(r"\d+_scan_\d+\.png", f)]
+
+        # Extract the first number (N) from filenames like "7_scan_3500.png"
+        scanned_numbers = set()
         for file in existing_files:
-            match = re.match(r"scan_(\d+)\.png", file)
+            match = re.match(r"(\d+)_scan_\d+\.png", file)
             if match:
-                number = int(match.group(1))
-                highest_number = max(highest_number, number)
-        
-        self.counter = highest_number + 1
+                scanned_numbers.add(int(match.group(1)))
+
+        # Find the smallest missing number
+        smallest_missing = 1
+        while smallest_missing in scanned_numbers:
+            smallest_missing += 1
+
+        self.counter = smallest_missing
 
     def open_camera_settings(self):
         if not self.cap.isOpened():
