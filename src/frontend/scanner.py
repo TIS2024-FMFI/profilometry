@@ -423,7 +423,11 @@ class Scanner(BaseWindow):
             filename = f"{self.counter}_scan_{self.start_position+((self.counter-1)*self.shift)}.png"
             filepath = os.path.join(scans_path, filename)
             cv2.imwrite(filepath, frame)
-            ld.apply_to_image(scans_path_basic, filename, True)
+            result = ld.apply_to_image(scans_path_basic, filename, True)
+            print(result)
+            if result == False:
+                return False
+            cv2.imwrite(filepath, frame)
             ld.write_points_to_file_app()
             self.display_message_in_bottom_strip_about_scan_position()
 
@@ -680,19 +684,20 @@ class Scanner(BaseWindow):
             try:
                 # Zastavenie aktuálneho streamovania
                 #self.stop_stream()
-
+                
                 # Zachytenie snímky z kamery
                 ret, frame = self.cap.read()
                 if not ret:
                     messagebox.showerror("Chyba", "Nepodarilo sa zachytiť snímku.")
                     return False
-
                 # Uloženie snímky do raw adresára
                 filename = f"cal_scan_{len(scanned_images) + 1}.png"
                 filepath = os.path.join(calibration_path, "raw", filename)
                 cv2.imwrite(filepath, frame)
-                ld.apply_to_image(calibration_path_basic, filename, True)
-                ld.write_points_to_file_app()
+                result = ld.apply_to_image(calibration_path_basic, filename, True)
+                if result == False:
+                    return False
+                cv2.imwrite(filepath, frame)
 
                 # Pridanie do zoznamu
                 scanned_images.append(filepath)
