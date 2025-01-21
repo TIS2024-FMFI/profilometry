@@ -217,9 +217,11 @@ class ViewerWindow(BaseWindow):
         
         def delete_input_box2():
             for i in self.images_to_delete:
-                #print(self.scrollbar_images[int(i)-1])
-                os.remove(self.scrollbar_images[int(i)-1][0])
-                os.remove(self.scrollbar_images[int(i)-1][1])
+                for j in self.scrollbar_images:
+                    cest = i.split(' ')
+                    if cest[0]+'_'+cest[1]+'_'+cest[2] in j[0]:
+                        os.remove(j[0])
+                        os.remove(j[1])
             
             self.clear_images()
             self.add_to_scrollbar()
@@ -283,6 +285,7 @@ class ViewerWindow(BaseWindow):
                 imgs.append(filename)
         
         try:
+            print(imgs)
             imgs.sort(key=lambda x: int(x.split('_')[0]))
         except:
             pass
@@ -293,7 +296,7 @@ class ViewerWindow(BaseWindow):
 
                 name = filename.split('_')
                 if len(name) == 3:
-                    label = tk.Label(self.scrollable_frame, text=name[0] + '. ' + name[1]+ ' ' + name[2].split('.')[0], font=("Arial 14"))
+                    label = tk.Label(self.scrollable_frame, text=name[0] + ' ' + name[1]+ ' ' + name[2].split('.')[0], font=("Arial 14"))
                 else:
                     label = tk.Label(self.scrollable_frame, text=str(count + 1) + '. SCAN', font=("Arial 14"))
                 
@@ -328,10 +331,10 @@ class ViewerWindow(BaseWindow):
                 def on_right_click(event, label):
                     if label['bg'] == 'red':
                         label.config(bg='white')
-                        self.images_to_delete.remove(label['text'].split('.')[0])
+                        self.images_to_delete.remove(label['text'])
                     else:
                         label.config(bg="red")
-                        self.images_to_delete.append(label['text'].split('.')[0])
+                        self.images_to_delete.append(label['text'])
                     
 
                 label.bind("<Enter>", lambda event, label=label: on_hover_enter(event, label))
@@ -494,6 +497,7 @@ class ViewerWindow(BaseWindow):
                 progress_var.set(i + 1)
                 progress_window.update_idletasks()
 
+            print("AAAA")
             processor.write_points_to_file()
             self.all_points_to_img = processor.all_points
             progress_window.destroy()

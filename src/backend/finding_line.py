@@ -177,13 +177,13 @@ class LineDetection:
     
     
     def write_points_to_file(self):
-        if self.raw_path == "/scans/raw":
+        if self.raw_path == "/scans/raw/":
             with open(self.project_path+'/points.txt', mode = 'w') as file:
                 for i in self.all_points2:
                     print(f'{i[0]} {i[1]} {i[2]}', file = file)
     
     def write_points_to_file_app(self):
-        if self.raw_path == "/scans/raw":
+        if self.raw_path == "/scans/raw/":
             try:
                 with open(self.project_path+'/points.txt', mode = 'a') as file:
                     for i in self.all_points2:
