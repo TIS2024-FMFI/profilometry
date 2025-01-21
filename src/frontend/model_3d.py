@@ -28,8 +28,8 @@ class Model3D(BaseWindow):
             self.open_project()  
             self.actual_project = self.current_project 
             self.path = self.actual_project.project_dir
-        
-        self.setup_window()
+        self.points_to_display = self.point_cloud()
+        self.setup_window(self.points_to_display)
 
     def point_cloud(self):
         """Reads 3D points from points.txt in the specified path and creates pointcloud for further processing."""
@@ -60,9 +60,9 @@ class Model3D(BaseWindow):
         file_menu.add_command(label="Open Project", command=self.open_project_f)
         export_menu = Menu(file_menu, tearoff=0)
         file_menu.add_cascade(label="Export", menu=export_menu)
-        export_menu.add_command(label="STL", command=lambda: self.export_file("stl"))
-        export_menu.add_command(label="OBJ", command=lambda: self.export_file("obj"))
-        export_menu.add_command(label="GLTF", command=lambda: self.export_file("gltf"))
+        export_menu.add_command(label="STL", command=lambda: self.export_file("stl",self.points_to_display))
+        export_menu.add_command(label="OBJ", command=lambda: self.export_file("obj",self.points_to_display))
+        export_menu.add_command(label="GLTF", command=lambda: self.export_file("gltf",self.points_to_display))
         file_menu.add_separator()
         file_menu.add_command(label="Exit", command=self.on_closing)
 
@@ -72,7 +72,7 @@ class Model3D(BaseWindow):
         main_menu.add_command(label="Scan Profile", command=self.scan_profile)
         main_menu.add_command(label= "View Scans", command=self.browse_scans)
 
-    def setup_window(self):
+    def setup_window(self, points_to_display):
         """Sets up the main window with toggle buttons for 3D Points and 3D Object."""
         for widget in self.root.current_frame.winfo_children():
             widget.destroy()
@@ -86,10 +86,10 @@ class Model3D(BaseWindow):
         self.canvas = FigureCanvasTkAgg(self.figure, master=self.root.current_frame)
         self.canvas.get_tk_widget().pack(fill='both', expand=True)
 
-        def show_3d_points():
+        def show_3d_points(points_to_display):
             """Displays the 3D point cloud."""
             self.figure.clf()  # Clear the figure
-            point_cloud = self.point_cloud()
+            point_cloud = points_to_display#self.point_cloud()
             if point_cloud.size == 0:
                 return
             ax = self.figure.add_subplot(111, projection='3d')
@@ -99,10 +99,10 @@ class Model3D(BaseWindow):
             ax.set_axis_off()
             self.canvas.draw()
 
-        def show_3d_object():
+        def show_3d_object(points_to_display):
             """Displays the smooth 3D object."""
             self.figure.clf()  
-            point_cloud = self.point_cloud()
+            point_cloud = points_to_display #self.point_cloud()
             if point_cloud.size == 0:
                 return
             tri = Delaunay(point_cloud[:, :2])
@@ -156,35 +156,35 @@ class Model3D(BaseWindow):
         object_button.pack(side='left', padx=10)
 
         # Default View
-        show_3d_points()
+        show_3d_points(points_to_display)
         self.root.root.state('zoomed')  # Maximize the window
         self.root.root.configure(bg='white')
         self.root.root.protocol("WM_DELETE_WINDOW", self.on_closing)  # Handle window close event   
 
-    def initialize_folder_processing(self, folder_path):
-        """Process the folder and perform additional operations specific to 3D visualiser."""
-        try:
-            self.path = folder_path
-            file_path = os.path.join(self.path, "points.txt")
-            if not os.path.exists(file_path):
-                raise FileNotFoundError(f"points.txt not found in {folder_path}")
-            for widget in self.root.current_frame.winfo_children():
-                widget.destroy()
-            self.setup_window()
-            print("3D model updated successfully.")
+    # def initialize_folder_processing(self, folder_path):
+    #     """Process the folder and perform additional operations specific to 3D visualiser."""
+    #     try:
+    #         self.path = folder_path
+    #         file_path = os.path.join(self.path, "points.txt")
+    #         if not os.path.exists(file_path):
+    #             raise FileNotFoundError(f"points.txt not found in {folder_path}")
+    #         for widget in self.root.current_frame.winfo_children():
+    #             widget.destroy()
+    #         self.setup_window()
+    #         print("3D model updated successfully.")
     
-        except FileNotFoundError as e:
-            messagebox.showerror("File Not Found", str(e))
-        except Exception as e:
-            messagebox.showerror("Processing Error", f"An unexpected error occurred: {e}")
+    #     except FileNotFoundError as e:
+    #         messagebox.showerror("File Not Found", str(e))
+    #     except Exception as e:
+    #         messagebox.showerror("Processing Error", f"An unexpected error occurred: {e}")
     
-    def export_file(self, format):
+    def export_file(self, format, point_cloud):
         """
         Exports the 3D object in the specified format (STL, OBJ, GLTF).
         Creates an 'objects' directory in self.path if it doesn't exist.
         """
         if format in ["stl", "obj", "gltf"]:
-            point_cloud = self.point_cloud()
+            # point_cloud = self.point_cloud()
             if point_cloud.size == 0:
                 return 
             objects_folder = os.path.join(self.path, "objects")
