@@ -81,14 +81,13 @@ class Model3D(BaseWindow):
         title_label = tk.Label(title_frame, text="3D Model Viewer", font=('Arial', 16), bg='white')
         title_label.pack(side='top', pady=(0, 5))
 
-
         self.figure = Figure(figsize=(10, 6), dpi=100)
         self.canvas = FigureCanvasTkAgg(self.figure, master=self.root.current_frame)
         self.canvas.get_tk_widget().pack(fill='both', expand=True)
 
         def show_3d_points():
             """Displays the 3D point cloud."""
-            self.figure.clf()  # Clear the figure
+            self.figure.clf()  
             point_cloud = self.point_cloud()
             if point_cloud.size == 0:
                 return
@@ -141,7 +140,6 @@ class Model3D(BaseWindow):
             def on_leave(e):
                 button.configure(bg=WINDOW_CONFIG['bg_color'])
                 
-                
             button.bind('<Enter>', on_enter)
             button.bind('<Leave>', on_leave)
             
@@ -157,7 +155,7 @@ class Model3D(BaseWindow):
 
         # Default View
         show_3d_points()
-        self.root.root.state('zoomed')  # Maximize the window
+        self.root.root.state('zoomed') 
         self.root.root.configure(bg='white')
         self.root.root.protocol("WM_DELETE_WINDOW", self.on_closing)  # Handle window close event   
 
