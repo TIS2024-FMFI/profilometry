@@ -421,7 +421,7 @@ class Scanner(BaseWindow):
 
             # Uloženie snímky do raw adresára
             filename = f"{self.counter}_scan_{self.start_position+((self.counter-1)*self.shift)}.png"
-            filepath = os.path.join(scans_path, filename)
+            filepath = os.path.normpath(os.path.join(scans_path, filename))
             cv2.imwrite(filepath, frame)
             result = ld.apply_to_image(scans_path_basic, filename, True)
             if result == False:
@@ -696,12 +696,13 @@ class Scanner(BaseWindow):
                     return False
                 # Uloženie snímky do raw adresára
                 filename = f"cal_scan_{len(scanned_images) + 1}.png"
-                filepath = os.path.join(calibration_path, "raw", filename)
-                result = ld.apply_to_image(calibration_path_basic, filename, True)
+                filepath = os.path.normpath(os.path.join(calibration_path, "raw", filename))
+                cv2.imwrite(filepath, frame)
+                result = ld.apply_to_image(calibration_path_basic, filename, True, calibration = True)
                 if result == False:
                     return False
                 cv2.imwrite(filepath, frame)
-                ld.write_points_to_file_app()
+                # ld.write_points_to_file_app()
                 calibration_points.append(ld.all_points2)
 
                 # Pridanie do zoznamu
@@ -756,7 +757,7 @@ class Scanner(BaseWindow):
                         avg_pixels += scan_points[-1][0] - scan_points[0][0]
                         valid_points += 1
 
-                if valid_points == 0:
+                if valid_points == 0 or avg_pixels == 0:
                     return 0
                 
                 avg_pixels /= valid_points
@@ -764,4 +765,4 @@ class Scanner(BaseWindow):
                     
             except Exception as e:
                 print(f"Error in calculate_constant: {e}")
-                return None
+                return 0
