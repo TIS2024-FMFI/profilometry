@@ -9,7 +9,7 @@ class LineDetection:
     To process an entire folder of images, set the `path` where the images are located 
     and the `out_path` where the processed images should be saved. Ensure the output 
     folder exists before running the program."""
-    def __init__(self, path, out_path, constant, extension='jpg', raw_path = '/scans/raw/', processed_path = '/scans/processed/'):
+    def __init__(self, path, out_path, extension='jpg', raw_path = '/scans/raw/', processed_path = '/scans/processed/'):
         # Initialize parameters
         self.project_path = path
         self.raw_path = raw_path
@@ -17,14 +17,21 @@ class LineDetection:
         self.path = path + self.raw_path
         self.out_path = out_path
         self.extension = extension
-        self.constant = constant
+        self.shift = 0
+        self.resize = 1
         self.shift_count = 1
         self.all_points = []
         self.all_points2 = []
-        self.all_points2 = []
+        self.reference = 0
+        
+        self.initialize()
 
-    def find_line_alg1(self, img, scanning = False):
+
+    def find_line_alg1(self, img, scanning = False, calibration = False):
+        self.initialize()
         # Detect the line using Algorithm 1
+        img = os.path.normpath(img)
+        print(img)
         if isinstance(img, str):
             img = cv2.imread(img)
             img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
@@ -78,7 +85,9 @@ class LineDetection:
                 else:
                     if point[1] > first_point:
                         object_points.append(point)
-            
+
+            self.reference = avg_reference // len(reference_points)
+
             # Draw reference line
             if len(reference_points) > 0:
                 cv2.line(new_img, (0, avg_reference // len(reference_points)), 
@@ -89,24 +98,42 @@ class LineDetection:
             for point in object_points:
                 cv2.circle(new_img, (point[0], point[1]), radius=2, color=(0, 0, 255), thickness=-1)
 
-            # Calculate and store points
-            new_points = [(int(point[0]), int(point[1] * self.shift_count * self.constant), 
-                        int(point[1] - avg_reference // len(reference_points))) 
-                        for point in object_points]
+            if calibration:
+                # Calculate and store points
+                new_points = [(int(point[0]), int(point[1] * self.shift_count), 
+                            int(point[1] - avg_reference // len(reference_points))) 
+                            for point in object_points]
 
-            self.all_points.append(np.array(new_points, np.int32))
-            
-            for pnt in object_points:
-                self.all_points2.append((pnt[0], pnt[1] * self.shift_count * self.constant, 
-                                pnt[1] - avg_reference // len(reference_points)))
-            
+                self.all_points.append(np.array(new_points, np.int32))
+                
+                for pnt in object_points:
+                    self.all_points2.append((pnt[0], pnt[1] * self.shift_count, 
+                                    pnt[1] - avg_reference // len(reference_points)))
+                
+            else:
+                # Calculate and store points
+                new_points = [(int(point[0] * self.resize), 
+                            int((point[1] + (self.shift_count * self.shift)) * self.resize), 
+                            int(point[1] - avg_reference // len(reference_points) * self.resize)) 
+                            for point in object_points]
+
+                self.all_points.append(np.array(new_points, np.int32))
+                
+                for pnt in object_points:
+                    self.all_points2.append((int(pnt[0] * self.resize), 
+                                            int((pnt[1]  + (self.shift_count * self.shift)) * self.resize), 
+                                            int(pnt[1] - avg_reference // len(reference_points) * self.resize)))
+
             self.shift_count += 1
+            # self.write_points_to_file()
             return new_img
         
         else:
             self.all_points = []
             self.all_points2 = []
+            # self.write_points_to_file()
             return None
+        
 
     def display_image(self, path):
         # Display processed image
@@ -114,10 +141,10 @@ class LineDetection:
         cv2.imshow("window", img)
         cv2.waitKey(0)
 
-    def apply_to_image(self, image_path, image, scanning = False):
+    def apply_to_image(self, image_path, image, scanning = False, calibration = False):
         # Apply the algorithm to a single image
         
-        img = self.find_line_alg1(image_path+ self.raw_path + image, scanning)
+        img = self.find_line_alg1(image_path+ self.raw_path + image, scanning, calibration)
         if scanning:
             if img is not None:
                 cv2.imwrite(image_path + self.procecced_path + image, img)
@@ -147,7 +174,6 @@ class LineDetection:
                     pass
         
         self.write_points_to_file()
-        #self.vykresli_vsetky_body()
 
     def display_all_points(self):
         # Display all detected points in one image
@@ -181,15 +207,46 @@ class LineDetection:
     
     def write_points_to_file(self):
         if self.raw_path == "/scans/raw/":
-            with open(self.project_path+'/points.txt', mode = 'w') as file:
+            with open(os.path.join(self.project_path, 'points.txt'), mode = 'w') as file:
                 for i in self.all_points2:
                     print(f'{i[0]} {i[1]} {i[2]}', file = file)
     
     def write_points_to_file_app(self):
         if self.raw_path == "/scans/raw/":
             try:
-                with open(self.project_path+'/points.txt', mode = 'a') as file:
+                points_path = os.path.join(self.project_path, 'points.txt')
+                if not os.path.exists(points_path):
+                    open(points_path, 'w').close()
+                with open(points_path, mode = 'a') as file:
                     for i in self.all_points2:
                         print(f'{i[0]} {i[1]} {i[2]}', file = file)
             except:
                 pass
+    
+
+    def initialize(self):
+        if self.raw_path == "/scans/raw/":
+            constant_path_name = os.path.normpath(os.path.join(self.project_path, "calibration/calibration_data.txt"))
+            shift_path_name = os.path.normpath(os.path.join(self.project_path, "movement_parameters/movement_view1.txt"))
+            if os.path.exists(constant_path_name) and os.path.exists(shift_path_name):
+                with open(constant_path_name, "r") as file:
+                    try:
+                        constant_value = float(file.readline().strip().split(',')[2])
+                        self.resize = constant_value
+                    except:
+                        messagebox.showerror("Data not found!", "Calibration data are not available!")
+                        return False
+                    
+                with open(shift_path_name, "r") as file:
+                    try:
+                        shift_value = float(file.readline().strip().split(',')[1])
+                        self.shift = shift_value * 20
+                        return True
+                    except:
+                        messagebox.showerror("Data not found!", "Calibration data are not available!")
+                        return False
+            messagebox.showerror("Data not found!", "Calibration data are not available!")
+            return False
+        else:
+            return True
+            

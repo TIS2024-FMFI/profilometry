@@ -26,7 +26,7 @@ class ViewerWindow(BaseWindow):
         self.root.root.minsize(self.screen_width, self.screen_height)
         self.root.root.maxsize(self.screen_width, self.screen_height)
         
-        self.pripona = 'png'  # File extension (e.g., png, jpg)
+        self.extension = 'png'  # File extension (e.g., png, jpg)
         LINE_DETECTION['significant_threshold_pixel'] = 80
         LINE_DETECTION['largest_points_threshold'] = 30
         
@@ -156,7 +156,7 @@ class ViewerWindow(BaseWindow):
             
         def show2d():
             from backend.finding_line import LineDetection
-            ld = LineDetection(self.path , self.path + '/scans/processed', constant=1, extension= self.pripona)
+            ld = LineDetection(self.path , self.path + '/scans/processed', extension= self.extension)
             if len(self.all_points_to_img) > 1:
                 ld.all_points = self.all_points_to_img
                 ld.display_all_points()
@@ -281,17 +281,16 @@ class ViewerWindow(BaseWindow):
         
         imgs= []
         for filename in os.listdir(self.path+'/scans/raw'):
-            if filename.endswith("." + self.pripona):  # Check for correct file extension
+            if filename.endswith("." + self.extension):  # Check for correct file extension
                 imgs.append(filename)
         
         try:
-            print(imgs)
             imgs.sort(key=lambda x: int(x.split('_')[0]))
         except:
             pass
         
         for filename in imgs:
-            if filename.endswith("." + self.pripona):  # Check for correct file extension
+            if filename.endswith("." + self.extension):  # Check for correct file extension
                 file_path = os.path.join(self.path, filename)
 
                 name = filename.split('_')
@@ -465,7 +464,7 @@ class ViewerWindow(BaseWindow):
         
         from backend.finding_line import LineDetection
         os.makedirs(self.path + '/scans/processed', exist_ok=True)  # Create directory for processed files
-        processor = LineDetection(self.path, self.path + '/scans/processed', 1, extension=self.pripona)
+        processor = LineDetection(self.path, self.path + '/scans/processed', extension=self.extension)
         processor.significant_threshold_pixel = LINE_DETECTION['significant_threshold_pixel']
         processor.largest_points_threshold = LINE_DETECTION['largest_points_threshold']
         self.images_to_delete = []
@@ -497,7 +496,6 @@ class ViewerWindow(BaseWindow):
                 progress_var.set(i + 1)
                 progress_window.update_idletasks()
 
-            print("AAAA")
             processor.write_points_to_file()
             self.all_points_to_img = processor.all_points
             progress_window.destroy()
@@ -523,7 +521,7 @@ class ViewerWindow(BaseWindow):
     def use_algorithm_batch(self):
         from backend.finding_line import LineDetection
         os.makedirs(self.path + '/scans/processed', exist_ok=True)  # Create directory for processed files
-        processor = LineDetection(self.path, self.path + '/scans/processed', 1, extension=self.pripona)
+        processor = LineDetection(self.path, self.path + '/scans/processed', extension=self.extension)
         self.images_to_delete = []
         
         # Apply the algorithm to all files in the folder
@@ -540,14 +538,14 @@ class ViewerWindow(BaseWindow):
         
         if files:
             extension = self.get_file_extension(files)
-            self.pripona = extension
+            self.extension = extension
             self.all_points_to_img = []
             self.images_to_delete = []
 
             if len(files) != len(files_alg):
                 os.makedirs(folder_path_alg, exist_ok=True)
                 from backend.finding_line import LineDetection
-                processor = LineDetection(folder_path, folder_path_alg, 1, extension=extension)
+                processor = LineDetection(folder_path, folder_path_alg, extension=extension)
                 processor.apply_to_folder()
                 self.all_points_to_img = processor.all_points
 

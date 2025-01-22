@@ -15,6 +15,11 @@ The following Python libraries are required:
 - `numpy>=1.19.0`
 - `Pillow>=8.0.0`
 - `matplotlib>=3.3.0`
+- `numpy-stl>=2.16.0`
+- `trimesh>=3.9.0`
+- `pygltflib>=1.2.0`
+- `scipy>=0.9.0`
+- `pygrabber`
 
 These are listed in the `requirements.txt` file and will be automatically installed when running the application.
 

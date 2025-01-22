@@ -5,7 +5,7 @@ from tkinter import Menu, messagebox, ttk, filedialog, simpledialog
 from PIL import Image, ImageTk
 import os
 import re
-import json
+import numpy as np
 from frontend.base_window import BaseWindow
 from backend.finding_line import LineDetection
 from config import CALIBRATION
@@ -147,7 +147,7 @@ class Scanner(BaseWindow):
         if not hasattr(self, 'actual_project') or not getattr(self, 'actual_project', None):
             # Case: No project loaded or created
             self.message_label.config(
-                text="First, open or create a new project to manage scans."
+                text="No project found. Please create or open a project."
             )
             self.scan_button.config(state=tk.DISABLED)
         else:
@@ -351,7 +351,7 @@ class Scanner(BaseWindow):
                         self.canvas.image = photo
 
             except Exception as e:
-                print(f"Chyba v streame: {e}")
+                print(f"Error in stream: {e}")
                 break
 
         # Definite stop
@@ -406,7 +406,7 @@ class Scanner(BaseWindow):
             return
         
         scans_path_basic = os.path.join(self.actual_project.project_dir)
-        ld = LineDetection(scans_path_basic, scans_path_basic + '/scans/processed/', 1, extension="png")
+        ld = LineDetection(scans_path_basic, scans_path_basic + '/scans/processed/', extension="png")
         scans_path = os.path.join(scans_path_basic, "scans", "raw")
 
         # Initialize counter based on existing files
@@ -416,24 +416,23 @@ class Scanner(BaseWindow):
             # Zachytenie snímky z kamery
             ret, frame = self.cap.read()
             if not ret:
-                messagebox.showerror("Chyba", "Nepodarilo sa zachytiť snímku.")
+                messagebox.showerror("Error", "Failed to capture image.")
                 return False
 
             # Uloženie snímky do raw adresára
             filename = f"{self.counter}_scan_{self.start_position+((self.counter-1)*self.shift)}.png"
-            filepath = os.path.join(scans_path, filename)
+            filepath = os.path.normpath(os.path.join(scans_path, filename))
             cv2.imwrite(filepath, frame)
             result = ld.apply_to_image(scans_path_basic, filename, True)
-            print(result)
             if result == False:
                 return False
             cv2.imwrite(filepath, frame)
-            ld.write_points_to_file_app()
+            # ld.write_points_to_file_app()
             self.display_message_in_bottom_strip_about_scan_position()
 
             return True
         except Exception as e:
-            messagebox.showerror("Chyba", f"Chyba pri snímaní: {e}")
+            messagebox.showerror("Error", f"Error while scanning: {e}")
             return False
         
     def open_object_shift(self):
@@ -494,7 +493,7 @@ class Scanner(BaseWindow):
 
                 self.display_message_in_bottom_strip_about_scan_position()
 
-                messagebox.showinfo("Success", f"Object will start from:\n{self.start_position} hundredths of a millimeter\nIt will be repeatedly moved by:\n{self.shift}hundredths of a millimeter", parent=shift_window)
+                messagebox.showinfo("Success", f"Object will start from:\n{self.start_position}  hundredths of a millimeter\n\nIt will be repeatedly moved by:\n{self.shift}  hundredths of a millimeter", parent=shift_window)
                 shift_window.destroy()
             except ValueError as e:
                 messagebox.showerror("Error", str(e), parent=shift_window)
@@ -551,15 +550,15 @@ class Scanner(BaseWindow):
                 break
 
     def calibration(self):
-        """Otvorenie kalibračného dialógového okna pre projekt."""
+        """Open calibration dialog window for the project."""
         # Najprv skontrolujeme, či je projekt otvorený
         if not hasattr(self, 'actual_project') or not getattr(self, 'actual_project', None):
-            messagebox.showerror("Chyba", "Najprv otvorte alebo vytvorte projekt.")
+            messagebox.showerror("Error", "No project found. Please create or open a project.")
             return
 
         # Dialógové okno pre kalibráciu
         calibration_dialog = tk.Toplevel(self.main_window.root)
-        calibration_dialog.title("Kalibrácia")
+        calibration_dialog.title("Calibration")
         calibration_dialog.geometry("500x600")
         calibration_dialog.resizable(False, False)
 
@@ -577,8 +576,8 @@ class Scanner(BaseWindow):
             calibration_file = os.path.join(calibration_path, "calibration_data.txt")
             if os.path.exists(calibration_file):
                 response = messagebox.askyesno(
-                    "Existujúca kalibrácia", 
-                    "Pre tento pohľad už existuje kalibrácia. Chcete zmazať existujúce skeny a vytvoriť novú kalibráciu?"
+                    "Calibration for this project already exists!", 
+                    "Do you want to create new calibration?\n(note: the previous calibration will be deleted)"
                 )
                 if response:
                     # Zmazanie existujúcich kalibračných súborov
@@ -595,10 +594,10 @@ class Scanner(BaseWindow):
                 height = float(height_var.get())
                 
                 if width <= 0 or height <= 0:
-                    messagebox.showerror("Chyba", "Rozmery musia byť kladné čísla.")
+                    messagebox.showerror("Error", "Please enter valid numbers!", parent=calibration_dialog)
                     return
             except ValueError:
-                messagebox.showerror("Chyba", "Zadajte platné numerické hodnoty pre šírku a výšku.")
+                messagebox.showerror("Error", "Please enter valid numbers!", parent=calibration_dialog)
                 return
 
             # Kontrola existujúcej kalibrácie
@@ -610,7 +609,7 @@ class Scanner(BaseWindow):
             os.makedirs(os.path.join(calibration_path, "processed"), exist_ok=True)
 
             #Inicializácia line detektora (algoritmu na hľadanie čiary)
-            ld = LineDetection(calibration_path_basic, calibration_path_basic + '/calibration/processed/', 1, extension="png", raw_path="/calibration/raw/", processed_path = '/calibration/processed/')
+            ld = LineDetection(calibration_path_basic, calibration_path_basic + '/calibration/processed/', extension="png", raw_path="/calibration/raw/", processed_path = '/calibration/processed/')
             
             # Spustenie skenovania
             self._run_calibration_scan(
@@ -626,16 +625,16 @@ class Scanner(BaseWindow):
             )
 
         # Rozloženie widgetov
-        tk.Label(calibration_dialog, text="Kalibrácia", font=("Arial", 16, "bold")).pack(pady=10)
+        tk.Label(calibration_dialog, text="Calibration", font=("Arial", 16, "bold")).pack(pady=10)
         
         # Rámček pre rozmery
         dimension_frame = tk.Frame(calibration_dialog)
         dimension_frame.pack(pady=20)
 
-        tk.Label(dimension_frame, text="Šírka kalibračného objektu (mm):", font=("Arial", 12)).grid(row=0, column=0, padx=5, pady=5)
+        tk.Label(dimension_frame, text="Width of calibration object (mm):", font=("Arial", 12)).grid(row=0, column=0, padx=5, pady=5)
         tk.Entry(dimension_frame, textvariable=width_var, font=("Arial", 12), width=10).grid(row=0, column=1, padx=5, pady=5)
 
-        tk.Label(dimension_frame, text="Výška kalibračného objektu (mm):", font=("Arial", 12)).grid(row=1, column=0, padx=5, pady=5)
+        tk.Label(dimension_frame, text="Height of calibration object (mm):", font=("Arial", 12)).grid(row=1, column=0, padx=5, pady=5)
         tk.Entry(dimension_frame, textvariable=height_var, font=("Arial", 12), width=10).grid(row=1, column=1, padx=5, pady=5)
 
         # Progres bar
@@ -658,12 +657,11 @@ class Scanner(BaseWindow):
         scan_button.pack(pady=10)
 
     def _cleanup_existing_calibration(self, calibration_path):
-        """Vyčistenie existujúcich kalibračných súborov."""
+        """Clean up existing calibration files."""
         try:
             # Zmazanie raw a processed adresárov
             raw_path = os.path.join(calibration_path, "raw")
             processed_path = os.path.join(calibration_path, "processed")
-            calibration_file = os.path.join(calibration_path, "calibration_data.txt")
 
             # Odstránenie súborov
             for path in [raw_path, processed_path]:
@@ -671,33 +669,41 @@ class Scanner(BaseWindow):
                     for file in os.listdir(path):
                         os.remove(os.path.join(path, file))
 
-            # Odstránenie kalibračného súboru
-            if os.path.exists(calibration_file):
-                os.remove(calibration_file)
+            # Deleting data files for calibration
+            for file_path in ["calibration_data.txt", "avg_references.txt", "calibration_points.txt"]:
+                path = os.path.join(calibration_path, file_path)
+                path = os.path.normpath(path)
+                if os.path.exists(path):
+                    os.remove(path)
+
         except Exception as e:
-            messagebox.showerror("Chyba", f"Nepodarilo sa vyčistiť existujúcu kalibráciu: {e}")
+            messagebox.showerror("Error", f"Failed to clean up existing calibration: {e}")
 
     def _run_calibration_scan(self, calibration_path, width, height, scanned_images, progress_bar, scan_button, dialog, ld, calibration_path_basic):
-        """Spustenie kalibračného skenovania."""
+        calibration_points = []
+
+        """Start the calibration scanning process."""
         def capture_calibration_image():
-            """Zachytenie jednej kalibračnej snímky."""
+            """Capture a single calibration image."""
             try:
-                # Zastavenie aktuálneho streamovania
-                #self.stop_stream()
-                
-                # Zachytenie snímky z kamery
+                # Stop current streaming
+                # self.stop_stream()
+
+                # Capture image from camera
                 ret, frame = self.cap.read()
                 if not ret:
-                    messagebox.showerror("Chyba", "Nepodarilo sa zachytiť snímku.")
+                    messagebox.showerror("Error", "Scan could not be captured.")
                     return False
                 # Uloženie snímky do raw adresára
                 filename = f"cal_scan_{len(scanned_images) + 1}.png"
-                filepath = os.path.join(calibration_path, "raw", filename)
+                filepath = os.path.normpath(os.path.join(calibration_path, "raw", filename))
                 cv2.imwrite(filepath, frame)
-                result = ld.apply_to_image(calibration_path_basic, filename, True)
+                result = ld.apply_to_image(calibration_path_basic, filename, True, calibration = True)
                 if result == False:
                     return False
                 cv2.imwrite(filepath, frame)
+                # ld.write_points_to_file_app()
+                calibration_points.append(ld.all_points2)
 
                 # Pridanie do zoznamu
                 scanned_images.append(filepath)
@@ -706,37 +712,57 @@ class Scanner(BaseWindow):
                 progress_bar['value'] = len(scanned_images)
 
                 # Reštart streamovania
-                #self.start_stream()
+                # self.start_stream()
 
                 return True
             except Exception as e:
-                messagebox.showerror("Chyba", f"Chyba pri snímaní: {e}")
+                messagebox.showerror("Error", f"Error while scanning: {e}")
                 return False
 
         def finalize_calibration():
-            """Finalizácia kalibračného procesu."""
+            """Finalize the calibration process."""
             if len(scanned_images) == CALIBRATION['count']:
                 # Uloženie kalibračných údajov
                 calibration_file = os.path.join(calibration_path, "calibration_data.txt")
-                avg_distance = 0 ##TO DO
+                constant = calculate_constant()
                 with open(calibration_file, "w") as f:
-                    f.write(f"{width}, {height}, {avg_distance}\n")
-
-                messagebox.showinfo("Kalibrácia", "Kalibrácia úspešne dokončená.")
+                    f.write(f"{width}, {height}, {constant}\n")
                 dialog.destroy()
+
+                messagebox.showinfo("Calibration", "Calibration was successful.")
                 self.open_object_shift()
+
             else:
-                messagebox.showwarning("Nedokončená kalibrácia", f"Je potrebné zachytiť {CALIBRATION['count']} snímok.")
+                messagebox.showwarning("Calibration", f"Calibration was not completed!\nIt is necessary to make {CALIBRATION['count']} scans.")
 
         def on_scan_click():
             """Obsluha kliknutia na skenovanie."""
             if len(scanned_images) < CALIBRATION['count']:
                 if capture_calibration_image():
                     if len(scanned_images) == CALIBRATION['count']:
-                        scan_button.config(text="Dokončiť kalibráciu", command=finalize_calibration)
+                        scan_button.config(text="Complete Calibration", command=finalize_calibration)
             else:
                 finalize_calibration()
 
-        # Konfigurácia tlačidla
-        scan_button.config(text="Zachytiť snímku", command=on_scan_click)
-        
+        # Configure the button
+        scan_button.config(text="Capture Image", command=on_scan_click)
+
+        def calculate_constant():
+            """Calculates the calibration constant."""
+            try:
+                avg_pixels = 0
+                valid_points = 0
+                for scan_points in calibration_points:
+                    if len(scan_points) >= 2:
+                        avg_pixels += scan_points[-1][0] - scan_points[0][0]
+                        valid_points += 1
+
+                if valid_points == 0 or avg_pixels == 0:
+                    return 0
+                
+                avg_pixels /= valid_points
+                return width/avg_pixels
+                    
+            except Exception as e:
+                print(f"Error in calculate_constant: {e}")
+                return 0
