@@ -285,7 +285,6 @@ class ViewerWindow(BaseWindow):
                 imgs.append(filename)
         
         try:
-            print(imgs)
             imgs.sort(key=lambda x: int(x.split('_')[0]))
         except:
             pass
