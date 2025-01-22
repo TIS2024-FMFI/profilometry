@@ -497,7 +497,6 @@ class ViewerWindow(BaseWindow):
                 progress_var.set(i + 1)
                 progress_window.update_idletasks()
 
-            print("AAAA")
             processor.write_points_to_file()
             self.all_points_to_img = processor.all_points
             progress_window.destroy()
