@@ -112,12 +112,15 @@ class LineDetection:
                                          int(pnt[1] - avg_reference // len(reference_points) * self.resize)))
 
             self.shift_count += 1
+            self.write_points_to_file()
             return new_img
         
         else:
             self.all_points = []
             self.all_points2 = []
+            self.write_points_to_file()
             return None
+        
 
     def display_image(self, path):
         # Display processed image
@@ -243,7 +246,7 @@ class LineDetection:
             with open(shift_path_name, "r") as file:
                 try:
                     shift_value = float(file.readline().strip().split(',')[1])
-                    self.shift = shift_value * 100
+                    self.shift = shift_value * 20
                     return True
                 except:
                     messagebox.showerror("Data not found!", "Calibration data are not available!")
