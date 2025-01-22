@@ -125,6 +125,9 @@ class LineDetection:
                 os.remove(image_path+ self.raw_path + image)
         else:
             cv2.imwrite(image_path + self.procecced_path + image, img)
+        if img is not None:
+            return True
+        return False
 
     def apply_to_folder(self):
         # Apply the algorithm to all images in the folder

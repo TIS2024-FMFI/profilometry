@@ -1,6 +1,6 @@
-/images/*
-/images/skusk/*
-/images/skusk_out/*
+/images/
 /last_project.txt
 __pycache__/
 *.pyc
+/src/__pycache__/
+/src/frontend/__pycache__/
