@@ -749,32 +749,19 @@ class Scanner(BaseWindow):
         def calculate_constant():
             """Calculates the calibration constant."""
             try:
-                # Validate calibration_points
-                valid_points = [
-                    pt for pt in calibration_points if len(pt) >= 2
-                ]  # Ensure each entry has at least two points
+                avg_pixels = 0
+                valid_points = 0
+                for scan_points in calibration_points:
+                    if len(scan_points) >= 2:
+                        avg_pixels += scan_points[-1][0] - scan_points[0][0]
+                        valid_points += 1
 
-                if not valid_points:
-                    print("Warning: No valid calibration points found.")
-                    return None  # Or return a default constant, e.g., 1.0, if that makes sense
-
-                # Calculate average y-distance from the reference
-                average_distances = []
-                for avg_ref, points in zip(references, valid_points):
-                    y_distances = [abs(point[1] - avg_ref) for point in points]
-                    avg_distance = np.mean(y_distances)
-                    average_distances.append(avg_distance)
-
-                # Calculate measured width (x difference) and height (average y-distance)
-                mean_measured_width = np.mean([abs(pt[0][0] - pt[1][0]) for pt in valid_points])
-                mean_measured_height = np.mean(average_distances)
-
-                # Compute calibration constants
-                k_x = width / mean_measured_width if mean_measured_width != 0 else 0
-                k_y = height / mean_measured_height if mean_measured_height != 0 else 0
-                k_avg = (k_x + k_y) / 2
-
-                return k_avg  # Return the calibration constant
+                if valid_points == 0:
+                    return 0
+                
+                avg_pixels /= valid_points
+                return width/avg_pixels
+                    
             except Exception as e:
                 print(f"Error in calculate_constant: {e}")
                 return None
