@@ -25,9 +25,7 @@ class LineDetection:
         self.reference = 0
         
         self.initialize()
-
-        # if self.initialize() == False:
-            
+        
 
     def find_line_alg1(self, img, scanning = False):
         self.initialize()
@@ -232,25 +230,28 @@ class LineDetection:
                 print(f'{point[0]} {point[1]} {point[2]}', file=file)
     
     def initialize(self):
-        constant_path_name = os.path.normpath(os.path.join(self.project_path, "calibration/calibration_data.txt"))
-        shift_path_name = os.path.normpath(os.path.join(self.project_path, "movement_parameters/movement_view1.txt"))
-        if os.path.exists(constant_path_name) and os.path.exists(shift_path_name):
-            with open(constant_path_name, "r") as file:
-                try:
-                    constant_value = float(file.readline().strip().split(',')[2])
-                    self.resize = constant_value
-                except:
-                    messagebox.showerror("Data not found!", "Calibration data are not available!")
-                    return False
-                
-            with open(shift_path_name, "r") as file:
-                try:
-                    shift_value = float(file.readline().strip().split(',')[1])
-                    self.shift = shift_value * 20
-                    return True
-                except:
-                    messagebox.showerror("Data not found!", "Calibration data are not available!")
-                    return False
-        messagebox.showerror("Data not found!", "Calibration data are not available!")
-        return False
+        if self.raw_path == "/scans/raw/":
+            constant_path_name = os.path.normpath(os.path.join(self.project_path, "calibration/calibration_data.txt"))
+            shift_path_name = os.path.normpath(os.path.join(self.project_path, "movement_parameters/movement_view1.txt"))
+            if os.path.exists(constant_path_name) and os.path.exists(shift_path_name):
+                with open(constant_path_name, "r") as file:
+                    try:
+                        constant_value = float(file.readline().strip().split(',')[2])
+                        self.resize = constant_value
+                    except:
+                        messagebox.showerror("Data not found!", "Calibration data are not available!")
+                        return False
+                    
+                with open(shift_path_name, "r") as file:
+                    try:
+                        shift_value = float(file.readline().strip().split(',')[1])
+                        self.shift = shift_value * 20
+                        return True
+                    except:
+                        messagebox.showerror("Data not found!", "Calibration data are not available!")
+                        return False
+            messagebox.showerror("Data not found!", "Calibration data are not available!")
+            return False
+        else:
+            return True
             
