@@ -16,4 +16,5 @@ Profilometry/
 │
 ├── README.md                       # Project documentation
 ├── main.py                         # Main entry point for the application
+├── last_project.txt                # Saves information about last opened project
 └── requirements.txt                # Dependencies for the project
