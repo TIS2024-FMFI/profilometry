@@ -30,10 +30,26 @@ class Model3D(BaseWindow):
             self.path = self.actual_project.project_dir
         
         self.setup_window()
+        self.refresh_model()
+
+    def refresh_model(self):
+        """Refresh the model when the window is opened or re-entered."""
+        try:
+            file_path = os.path.join(self.path, "points.txt")
+            if not os.path.exists(file_path):
+                raise FileNotFoundError(f"Points.txt not found.\nPlease use alghoritm to create the file.")
+            for widget in self.root.current_frame.winfo_children():
+                widget.destroy()
+            self.setup_window()
+            print("3D model refreshed successfully.")
+        except FileNotFoundError as e:
+            messagebox.showerror("File Not Found", str(e))
+        except Exception as e:
+            messagebox.showerror("Refresh Error", f"An unexpected error occurred: {e}")
 
     def point_cloud(self):
         """Reads 3D points from points.txt in the specified path and creates pointcloud for further processing."""
-        file_path = f"{self.path}/points.txt"       
+        file_path = os.path.normpath(f"{self.path}/points.txt")   
         try:
             point_cloud = np.loadtxt(file_path, dtype=int)
             return point_cloud
