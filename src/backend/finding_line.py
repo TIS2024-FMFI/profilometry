@@ -9,7 +9,7 @@ class LineDetection:
     To process an entire folder of images, set the `path` where the images are located 
     and the `out_path` where the processed images should be saved. Ensure the output 
     folder exists before running the program."""
-    def __init__(self, path, out_path, constant, extension='jpg', raw_path = '/scans/raw/', processed_path = '/scans/processed/'):
+    def __init__(self, path, out_path, extension='jpg', raw_path = '/scans/raw/', processed_path = '/scans/processed/'):
         # Initialize parameters
         self.project_path = path
         self.raw_path = raw_path
@@ -17,13 +17,20 @@ class LineDetection:
         self.path = path + self.raw_path
         self.out_path = out_path
         self.extension = extension
-        self.constant = constant
+        self.shift = None
+        self.resize = None
         self.shift_count = 1
         self.all_points = []
         self.all_points2 = []
         self.reference = 0
+        
+        self.initialize()
+
+        # if self.initialize() == False:
+            
 
     def find_line_alg1(self, img, scanning = False):
+        self.initialize()
         # Detect the line using Algorithm 1
         if isinstance(img, str):
             img = cv2.imread(img)
@@ -149,7 +156,6 @@ class LineDetection:
                     pass
         
         self.write_points_to_file()
-        #self.vykresli_vsetky_body()
 
     def display_all_points(self):
         # Display all detected points in one image
@@ -182,10 +188,10 @@ class LineDetection:
     
     
     def write_points_to_file(self):
-        name = '/points.txt'
+        name = 'points.txt'
         if self.raw_path == "/calibration/raw/":
-            name = '/calibration/points.txt'
-            path_name = os.path.join(self.project_path, "/calibration/avg_references.txt")
+            name = 'calibration/points.txt'
+            path_name = os.path.join(self.project_path, "calibration/avg_references.txt")
             with open(os.path.normpath(path_name), mode = 'w') as file:
                 print(f'{self.reference}', file = file)
         path_name = os.path.join(self.project_path, name)
@@ -219,3 +225,27 @@ class LineDetection:
         with open(os.path.normpath(target_path), 'a') as file:
             for point in self.all_points2:
                 print(f'{point[0]} {point[1]} {point[2]}', file=file)
+    
+    def initialize(self):
+        constant_path_name = os.path.normpath(os.path.join(self.project_path, "calibration/calibration_data.txt"))
+        shift_path_name = os.path.normpath(os.path.join(self.project_path, "movement_parameters/movement_view1.txt"))
+        if os.path.exists(constant_path_name) and os.path.exists(shift_path_name):
+            with open(constant_path_name, "r") as file:
+                try:
+                    constant_value = float(file.readline().strip().split(',')[2])
+                    self.resize = constant_value
+                except:
+                    messagebox.showerror("Data not found!", "Calibration data are not available!")
+                    return False
+                
+            with open(shift_path_name, "r") as file:
+                try:
+                    shift_value = float(file.readline().strip().split(',')[1])
+                    self.shift = shift_value * 100
+                    return True
+                except:
+                    messagebox.showerror("Data not found!", "Calibration data are not available!")
+                    return False
+        messagebox.showerror("Data not found!", "Calibration data are not available!")
+        return False
+            

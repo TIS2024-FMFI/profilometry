@@ -406,7 +406,7 @@ class Scanner(BaseWindow):
             return
         
         scans_path_basic = os.path.join(self.actual_project.project_dir)
-        ld = LineDetection(scans_path_basic, scans_path_basic + '/scans/processed/', 1, extension="png")
+        ld = LineDetection(scans_path_basic, scans_path_basic + '/scans/processed/', extension="png")
         scans_path = os.path.join(scans_path_basic, "scans", "raw")
 
         # Initialize counter based on existing files
@@ -424,11 +424,10 @@ class Scanner(BaseWindow):
             filepath = os.path.join(scans_path, filename)
             cv2.imwrite(filepath, frame)
             result = ld.apply_to_image(scans_path_basic, filename, True)
-            print(result)
             if result == False:
                 return False
             cv2.imwrite(filepath, frame)
-            ld.write_points_to_file_app()
+            # ld.write_points_to_file_app()
             self.display_message_in_bottom_strip_about_scan_position()
 
             return True
@@ -610,7 +609,7 @@ class Scanner(BaseWindow):
             os.makedirs(os.path.join(calibration_path, "processed"), exist_ok=True)
 
             #Inicializácia line detektora (algoritmu na hľadanie čiary)
-            ld = LineDetection(calibration_path_basic, calibration_path_basic + '/calibration/processed/', 1, extension="png", raw_path="/calibration/raw/", processed_path = '/calibration/processed/')
+            ld = LineDetection(calibration_path_basic, calibration_path_basic + '/calibration/processed/', extension="png", raw_path="/calibration/raw/", processed_path = '/calibration/processed/')
             
             # Spustenie skenovania
             self._run_calibration_scan(
@@ -681,7 +680,6 @@ class Scanner(BaseWindow):
             messagebox.showerror("Chyba", f"Nepodarilo sa vyčistiť existujúcu kalibráciu: {e}")
 
     def _run_calibration_scan(self, calibration_path, width, height, scanned_images, progress_bar, scan_button, dialog, ld, calibration_path_basic):
-        references = []
         calibration_points = []
 
         """Spustenie kalibračného skenovania."""
@@ -699,14 +697,11 @@ class Scanner(BaseWindow):
                 # Uloženie snímky do raw adresára
                 filename = f"cal_scan_{len(scanned_images) + 1}.png"
                 filepath = os.path.join(calibration_path, "raw", filename)
-                cv2.imwrite(filepath, frame)
                 result = ld.apply_to_image(calibration_path_basic, filename, True)
                 if result == False:
                     return False
                 cv2.imwrite(filepath, frame)
-                ld.apply_to_image(calibration_path_basic, filename, True)
                 ld.write_points_to_file_app()
-                references.append(ld.reference)
                 calibration_points.append(ld.all_points2)
 
                 # Pridanie do zoznamu

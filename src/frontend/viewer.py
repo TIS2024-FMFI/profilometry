@@ -156,7 +156,7 @@ class ViewerWindow(BaseWindow):
             
         def show2d():
             from backend.finding_line import LineDetection
-            ld = LineDetection(self.path , self.path + '/scans/processed', constant=1, extension= self.pripona)
+            ld = LineDetection(self.path , self.path + '/scans/processed', extension= self.pripona)
             if len(self.all_points_to_img) > 1:
                 ld.all_points = self.all_points_to_img
                 ld.display_all_points()
@@ -462,7 +462,7 @@ class ViewerWindow(BaseWindow):
         
         from backend.finding_line import LineDetection
         os.makedirs(self.path + '/scans/processed', exist_ok=True)  # Create directory for processed files
-        processor = LineDetection(self.path, self.path + '/scans/processed', 1, extension=self.pripona)
+        processor = LineDetection(self.path, self.path + '/scans/processed', extension=self.pripona)
         processor.significant_threshold_pixel = LINE_DETECTION['significant_threshold_pixel']
         processor.largest_points_threshold = LINE_DETECTION['largest_points_threshold']
         self.images_to_delete = []
@@ -519,7 +519,7 @@ class ViewerWindow(BaseWindow):
     def use_algorithm_batch(self):
         from backend.finding_line import LineDetection
         os.makedirs(self.path + '/scans/processed', exist_ok=True)  # Create directory for processed files
-        processor = LineDetection(self.path, self.path + '/scans/processed', 1, extension=self.pripona)
+        processor = LineDetection(self.path, self.path + '/scans/processed', extension=self.pripona)
         self.images_to_delete = []
         
         # Apply the algorithm to all files in the folder
@@ -543,7 +543,7 @@ class ViewerWindow(BaseWindow):
             if len(files) != len(files_alg):
                 os.makedirs(folder_path_alg, exist_ok=True)
                 from backend.finding_line import LineDetection
-                processor = LineDetection(folder_path, folder_path_alg, 1, extension=extension)
+                processor = LineDetection(folder_path, folder_path_alg, extension=extension)
                 processor.apply_to_folder()
                 self.all_points_to_img = processor.all_points
 
