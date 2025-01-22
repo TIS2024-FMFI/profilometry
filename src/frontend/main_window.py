@@ -17,12 +17,13 @@ class MainWindow(BaseWindow):
     def __init__(self, root, actual_project = None):
         self.root = root
         self.current_frame = None
+
         self.setup_window()
         self.setup_styles()
         self.show_main_menu()
         self.initialize_camera()
 
-        self.actual_project = actual_project
+        self.actual_project = actual_project or self.load_last_project()
 
     def setup_styles(self):
         """Setup custom styles for the buttons in the application"""

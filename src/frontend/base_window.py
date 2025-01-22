@@ -30,8 +30,8 @@ class BaseWindow:
         if project_name:
             try:
                 self.current_project = Project(project_name)
-                self.current_project.set_dir()
                 self.current_project.create_project()
+                self.current_project.create_scan_folders(self.current_project.project_dir+'/scans')
                 messagebox.showinfo("Success", f"Project '{project_name}' created successfully!")
             except Exception as e:
                 messagebox.showerror("Error", f"Failed to create project: {e}")
@@ -54,7 +54,37 @@ class BaseWindow:
         """Placeholder for subclass-specific processing."""
         pass
 
-    def save_project(self): messagebox.showinfo("Save Project", "Feature coming soon!")
+    def load_last_project(self):
+        """Check and load the last opened project."""
+        summary_path = LAST_PROJECT_FILE['name']
+
+        # Check if the last project file exists
+        if os.path.exists(summary_path):
+            try:
+                with open(summary_path, 'r') as file:
+                    lines = file.readlines()
+                    if len(lines) == 2:
+                        project_dir = lines[0].strip()
+                        project_name = lines[1].strip()
+
+                        if os.path.exists(project_dir):
+                            # Create a Project instance with the loaded name and path
+                            print(os.path.dirname(project_dir.rstrip(os.path.dirname('/'))))
+                            self.current_project = Project(project_name, base_dir=os.path.dirname(project_dir.rstrip(os.path.dirname('/'))))
+                            messagebox.showinfo("Info", f"Loaded last project: {self.current_project.project_name}")
+                            return self.current_project
+                        else:
+                            messagebox.showinfo("Info", "No valid last project found. Please create or open a project.")
+                            return None
+                    else:
+                        messagebox.showinfo("Info", "No valid last project found. Please create or open a project.")
+                        return None
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to load the last project: {e}")
+                return None
+        else:
+            messagebox.showinfo("Info", "No last project found. Please create or open a project.")
+            return None
 
     def export_file(self, format): messagebox.showinfo("Export", f"Export as {format} coming soon!")
 

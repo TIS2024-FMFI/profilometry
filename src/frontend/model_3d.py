@@ -57,9 +57,7 @@ class Model3D(BaseWindow):
         # File menu
         file_menu = Menu(self.menubar, tearoff=0)
         self.menubar.add_cascade(label="File", menu=file_menu)
-        file_menu.add_command(label="New Project", command=self.new_project)
         file_menu.add_command(label="Open Project", command=self.open_project_f)
-        file_menu.add_command(label="Save Project", command=self.save_project)
         export_menu = Menu(file_menu, tearoff=0)
         file_menu.add_cascade(label="Export", menu=export_menu)
         export_menu.add_command(label="STL", command=lambda: self.export_file("stl"))

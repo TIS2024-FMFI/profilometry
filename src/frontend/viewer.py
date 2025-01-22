@@ -283,7 +283,7 @@ class ViewerWindow(BaseWindow):
                 imgs.append(filename)
         
         try:
-            imgs.sort(key=lambda x: int(x.split('_')[1].split('.')[0]))
+            imgs.sort(key=lambda x: int(x.split('_')[0]))
         except:
             pass
         
@@ -291,7 +291,11 @@ class ViewerWindow(BaseWindow):
             if filename.endswith("." + self.pripona):  # Check for correct file extension
                 file_path = os.path.join(self.path, filename)
 
-                label = tk.Label(self.scrollable_frame, text=str(count + 1) + '. SCAN', font=("Arial 14"))
+                name = filename.split('_')
+                if len(name) == 3:
+                    label = tk.Label(self.scrollable_frame, text=name[0] + '. ' + name[1]+ ' ' + name[2].split('.')[0], font=("Arial 14"))
+                else:
+                    label = tk.Label(self.scrollable_frame, text=str(count + 1) + '. SCAN', font=("Arial 14"))
                 
 
                 split_path = file_path.split('\\')

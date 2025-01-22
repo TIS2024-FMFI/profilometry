@@ -9,10 +9,12 @@ class LineDetection:
     To process an entire folder of images, set the `path` where the images are located 
     and the `out_path` where the processed images should be saved. Ensure the output 
     folder exists before running the program."""
-    def __init__(self, path, out_path, constant, extension='jpg'):
+    def __init__(self, path, out_path, constant, extension='jpg', raw_path = '/scans/raw/', processed_path = '/scans/processed/'):
         # Initialize parameters
         self.project_path = path
-        self.path = path + '/scans/raw'
+        self.raw_path = raw_path
+        self.procecced_path = processed_path
+        self.path = path + self.raw_path
         self.out_path = out_path
         self.extension = extension
         self.constant = constant
@@ -115,14 +117,17 @@ class LineDetection:
     def apply_to_image(self, image_path, image, scanning = False):
         # Apply the algorithm to a single image
         
-        img = self.find_line_alg1(image_path+ "/scans/raw/" + image, scanning)
+        img = self.find_line_alg1(image_path+ self.raw_path + image, scanning)
         if scanning:
             if img is not None:
-                cv2.imwrite(image_path + '/scans/processed/' + image, img)
+                cv2.imwrite(image_path + self.procecced_path + image, img)
             else:
-                os.remove(image_path+ "/scans/raw/" + image)
+                os.remove(image_path+ self.raw_path + image)
         else:
-            cv2.imwrite(image_path + '/scans/processed/' + image, img)
+            cv2.imwrite(image_path + self.procecced_path + image, img)
+        if img is not None:
+            return True
+        return False
 
     def apply_to_folder(self):
         # Apply the algorithm to all images in the folder
@@ -175,14 +180,16 @@ class LineDetection:
     
     
     def write_points_to_file(self):
-        with open(self.project_path+'/points.txt', mode = 'w') as file:
-            for i in self.all_points2:
-                print(f'{i[0]} {i[1]} {i[2]}', file = file)
-    
-    def write_points_to_file_app(self):
-        try:
-            with open(self.project_path+'/points.txt', mode = 'a') as file:
+        if self.raw_path == "/scans/raw":
+            with open(self.project_path+'/points.txt', mode = 'w') as file:
                 for i in self.all_points2:
                     print(f'{i[0]} {i[1]} {i[2]}', file = file)
-        except:
-            pass
+    
+    def write_points_to_file_app(self):
+        if self.raw_path == "/scans/raw":
+            try:
+                with open(self.project_path+'/points.txt', mode = 'a') as file:
+                    for i in self.all_points2:
+                        print(f'{i[0]} {i[1]} {i[2]}', file = file)
+            except:
+                pass
