@@ -670,7 +670,7 @@ class Scanner(BaseWindow):
                         os.remove(os.path.join(path, file))
 
             # Deleting data files for calibration
-            for file_path in ["calibration_data.txt", "avg_references.txt", "calibration_points.txt"]:
+            for file_path in ["calibration_data.txt"]:
                 path = os.path.join(calibration_path, file_path)
                 path = os.path.normpath(path)
                 if os.path.exists(path):
