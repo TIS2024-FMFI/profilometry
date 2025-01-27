@@ -227,7 +227,7 @@ class LineDetection:
     def initialize(self):
         if self.raw_path == "/scans/raw/":
             constant_path_name = os.path.normpath(os.path.join(self.project_path, "calibration/calibration_data.txt"))
-            shift_path_name = os.path.normpath(os.path.join(self.project_path, "movement_parameters/movement_view1.txt"))
+            shift_path_name = os.path.normpath(os.path.join(self.project_path, "movement_parameters/movement.txt"))
             if os.path.exists(constant_path_name) and os.path.exists(shift_path_name):
                 with open(constant_path_name, "r") as file:
                     try:

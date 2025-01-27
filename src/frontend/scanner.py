@@ -58,7 +58,7 @@ class Scanner(BaseWindow):
     def get_movement_parameters(self):
         # Construct the path to the file
         folder_path = os.path.join(self.actual_project.project_dir, "movement_parameters")
-        file_path = os.path.join(folder_path, "movement_view1.txt")
+        file_path = os.path.join(folder_path, "movement.txt")
         
         # Check if folder and file exist
         if not os.path.exists(folder_path) or not os.path.exists(file_path):
@@ -483,7 +483,7 @@ class Scanner(BaseWindow):
                 # Save the start_position and shift to a file
                 movement_parameters_path = os.path.join(self.actual_project.project_dir, "movement_parameters")
                 os.makedirs(movement_parameters_path, exist_ok=True)
-                file_path = os.path.join(movement_parameters_path, "movement_view1.txt")
+                file_path = os.path.join(movement_parameters_path, "movement.txt")
                 
                 with open(file_path, "w") as file:
                     file.write(f"{start_position}, {shift}")
