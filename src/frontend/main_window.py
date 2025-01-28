@@ -110,36 +110,36 @@ class MainWindow(BaseWindow):
 
     def create_logo(self, parent):
         logo_size = 150
-        canvas = tk.Canvas(parent, width=logo_size, height=logo_size,
+        canvas = tk.Canvas(parent, width=logo_size * 1.5, height=logo_size * 1.5,
                            bg='#E8E8E8', highlightthickness=0)
         canvas.pack()
 
-        return self.draw_logo(canvas, logo_size)
+        return self.draw_logo(canvas, logo_size * 1.5)
 
     def draw_logo(self, canvas, size):
         center_x = size / 2
         center_y = size / 2
 
-        image = Image.new("RGBA", (size, size), (0, 0, 0, 0))
+        image = Image.new("RGBA", (int(size), int(size)), (0, 0, 0, 0))
         draw = ImageDraw.Draw(image)
 
-        base_color = (152, 255, 152)
+        base_color = (152, 255, 170)
         components_color = '#2c3e50'
         draw.ellipse([0, 0, size, size], fill=base_color)
-
-        draw.line((center_x - 40, center_y + 10, center_x + 40, center_y + 10), fill=components_color, width=6)
-        draw.line((center_x - 30, center_y - 20, center_x + 30, center_y - 20), fill=components_color, width=6)
-        r = 8
+    
+        draw.line((center_x - 70, center_y + 10, center_x + 70, center_y + 10), fill=components_color, width=10)
+        draw.line((center_x - 55, center_y - 30, center_x + 55, center_y - 30), fill=components_color, width=10)
+        r = 12
         draw.ellipse((center_x - r, center_y - r + 10, center_x + r, center_y + r + 10), fill=components_color, outline=(0, 0, 0, 255), width=2)
 
         logo_img = ImageTk.PhotoImage(image)
         canvas.create_image(size // 2, size // 2, anchor=tk.CENTER, image=logo_img)
         canvas.image = logo_img
 
-        canvas.create_text(center_x, center_y + 45, text="LaserScan",
-                        fill=components_color, font=('Arial', 14, 'bold'))
-        canvas.create_text(center_x + 30, center_y - 40, text="PRO",
-                        fill=components_color, font=('Arial', 10, 'bold'))
+        canvas.create_text(center_x, center_y + 60, text="LaserScan",
+                        fill=components_color, font=('Arial', 20, 'bold'))
+        canvas.create_text(center_x + 38, center_y - 62, text="PRO",
+                        fill=components_color, font=('Arial', 12))
 
         canvas.configure(bg=WINDOW_CONFIG['bg_color'])
 
