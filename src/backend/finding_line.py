@@ -190,7 +190,6 @@ class LineDetection:
          
         x_values = []
         y_values = []
-        print(all_points[0])
         if isinstance(all_points[0], list):
             for p1 in all_points:
                 x_values.append(p1[0])
