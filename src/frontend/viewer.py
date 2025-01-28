@@ -86,7 +86,7 @@ class ViewerWindow(BaseWindow):
 
     def use_algorithm_to_images(self):
         top = tk.Toplevel(self.root.root)
-        top.title("Výber hodnôt algoritmu")
+        top.title("Use Algorithm")
         top.geometry("300x200")
 
         def close_window(top):
