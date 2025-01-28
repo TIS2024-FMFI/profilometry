@@ -1,6 +1,7 @@
 import numpy as np
 import cv2
 import os
+import tkinter as tk
 from config import LINE_DETECTION
 from tkinter import messagebox
 
@@ -175,27 +176,63 @@ class LineDetection:
         
         self.write_points_to_file()
 
+    def center_setup_display_all_points(self, all_points):
+        """Sets up screen size and calculates center coordinates."""
+        root = tk.Tk()
+        screen_width = root.winfo_screenwidth()
+        screen_height = root.winfo_screenheight()
+        root.destroy()
+
+        combined_img = np.zeros((screen_height, screen_width, 3), dtype=np.uint8)
+
+        if not all_points:
+            return combined_img, 0, 0 
+         
+        x_values = []
+        y_values = []
+        print(all_points[0])
+        if isinstance(all_points[0], list):
+            for p1 in all_points:
+                x_values.append(p1[0])
+                y_values.append(p1[1])
+        else:
+            for points in all_points:
+                for p in points:
+                    x_values.append(p[0])
+                    y_values.append(p[1])
+
+        min_x, max_x = min(x_values), max(x_values)
+        min_y, max_y = min(y_values), max(y_values)
+
+        object_center_x = (min_x + max_x) // 2
+        object_center_y = int((min_y + max_y) // 2 * 0.01)
+
+        shift_x = screen_width // 2 - object_center_x
+        shift_y = screen_height // 2 - object_center_y
+
+        return combined_img, shift_x, shift_y
+
     def display_all_points(self):
-        # Display all detected points in one image
-        combined_img = np.zeros((1080, 1920, 3), dtype=np.uint8)
+        """Displays all detected points from self.all_points."""
+        combined_img, shift_x, shift_y = self.center_setup_display_all_points(self.all_points)
 
         for points in self.all_points:
             for point in points:
-                cv2.circle(combined_img, (point[0] - 400, int(point[1] * 0.01 + 400)), 
+                cv2.circle(combined_img, (point[0] + shift_x, int(point[1] * 0.01 + shift_y)), 
                            radius=2, color=(0, 255, 0), thickness=-1)
-        
+
         cv2.imshow("All Points", combined_img)
         cv2.waitKey(0)
         cv2.destroyAllWindows()
 
     def display_all_points2(self):
-        # Display all detected points in one image
-        combined_img = np.zeros((1080, 1920, 3), dtype=np.uint8)
+        """Displays all detected points from self.all_points2."""
+        combined_img, shift_x, shift_y = self.center_setup_display_all_points(self.all_points2)
 
         for points in self.all_points2:
-            cv2.circle(combined_img, (points[0] - 400, int(points[1] * 0.01 + 400)), 
-                           radius=2, color=(0, 255, 0), thickness=-1)
-        
+            cv2.circle(combined_img, (points[0] + shift_x, int(points[1] * 0.01 + shift_y)), 
+                       radius=2, color=(0, 255, 0), thickness=-1)
+
         cv2.imshow("All Points", combined_img)
         cv2.waitKey(0)
         cv2.destroyAllWindows()
