@@ -559,7 +559,7 @@ class Scanner(BaseWindow):
         # Dialógové okno pre kalibráciu
         calibration_dialog = tk.Toplevel(self.main_window.root)
         calibration_dialog.title("Calibration")
-        calibration_dialog.geometry("500x600")
+        calibration_dialog.geometry("500x300")
         calibration_dialog.resizable(False, False)
 
         # Kontrola existujúcej kalibrácie
@@ -650,7 +650,7 @@ class Scanner(BaseWindow):
         # Tlačidlo skenovania
         scan_button = tk.Button(
             calibration_dialog, 
-            text="Spustiť kalibráciu", 
+            text="Run Calibration", 
             command=start_calibration_scan, 
             font=("Arial", 12)
         )
