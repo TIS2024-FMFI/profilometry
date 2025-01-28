@@ -188,14 +188,17 @@ class MainWindow(BaseWindow):
         """Handle the 'SCAN IMAGE' button click"""
         self.clear_window()
         scanner = Scanner(self, self.actual_project)
+        self.root.title(WINDOW_CONFIG['title'] + ' - Scan Image')
         scanner.start_camera_view()
         
     def handle_view(self):
         """Handle the 'VIEW SCANS' button click"""
         self.clear_window()
+        self.root.title(WINDOW_CONFIG['title'] + ' - View Scans')
         viewer = ViewerWindow('', self, self.actual_project)
 
     def handle_3d(self):
         """Handle the 'SHOW 3D MODEL' button click"""
+        self.root.title(WINDOW_CONFIG['title'] + ' - Show 3D Model')
         self.clear_window()
         model3d = Model3D('', self, self.actual_project)

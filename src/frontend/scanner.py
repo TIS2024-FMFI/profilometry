@@ -8,7 +8,7 @@ import re
 import numpy as np
 from frontend.base_window import BaseWindow
 from backend.finding_line import LineDetection
-from config import CALIBRATION
+from config import CALIBRATION, WINDOW_CONFIG
 from pygrabber.dshow_graph import FilterGraph
 
 class Scanner(BaseWindow):
@@ -375,6 +375,7 @@ class Scanner(BaseWindow):
     def back_to_main_menu(self):
         """Navigate back to the main menu."""
         # Stop stream
+        self.root.title(WINDOW_CONFIG['title'])
         self.running = False
         
         #self.actual_project = self.current_project
