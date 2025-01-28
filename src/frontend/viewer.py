@@ -187,17 +187,27 @@ class ViewerWindow(BaseWindow):
         
         def delete_input_box1():
             input_window = tk.Toplevel(self.root.root)
-            input_window.title("Enter Two Numbers")
-            input_window.geometry("300x200")
-            
-            tk.Label(input_window, text="Enter first number:").pack(pady=5)
-            first_number_entry = tk.Entry(input_window)
-            first_number_entry.pack(pady=5)
-            
-            tk.Label(input_window, text="Enter second number:").pack(pady=5)
-            second_number_entry = tk.Entry(input_window)
-            second_number_entry.pack(pady=5)
-            
+            input_window.title("Delete interval")
+            input_window.geometry("350x180")
+
+            center_frame = tk.Frame(input_window)
+            center_frame.pack(expand=True) 
+
+            tk.Label(center_frame, text="Enter interval of images that you want to delete (including):").grid(
+                row=0, column=0, columnspan=2, padx=5, pady=10
+            )
+
+            tk.Label(center_frame, text="Start:").grid(
+                row=1, column=0, padx=5, pady=5, sticky="e"
+            )
+            first_number_entry = tk.Entry(center_frame)
+            first_number_entry.grid(row=1, column=1, padx=5, pady=5)
+
+            tk.Label(center_frame, text="End:").grid(
+                row=2, column=0, padx=5, pady=5, sticky="e"
+            )
+            second_number_entry = tk.Entry(center_frame)
+            second_number_entry.grid(row=2, column=1, padx=5, pady=5)
             
             def process_numbers():
                 try:
@@ -205,7 +215,7 @@ class ViewerWindow(BaseWindow):
                     num2 = int(second_number_entry.get())
                     if num1> num2 or num1<=0 or num2<=0 or num1> len(self.scrollbar_images) or num2 > len(self.scrollbar_images):
                         raise ValueError()
-                    ans = messagebox.askyesno("Numbers Entered", f"Do you want to delete images from {num1} to  {num2}?")
+                    ans = messagebox.askyesno("Numbers Entered", f"Do you want to delete images from {num1} to {num2} (including)?")
                     if ans:
                         self.delete_scans(num1, num2)
                         
@@ -213,7 +223,9 @@ class ViewerWindow(BaseWindow):
                 except ValueError:
                     messagebox.showerror("Invalid Input", "Please enter valid numbers!")
             
-            tk.Button(input_window, text="Submit", command=process_numbers).pack(pady=10)
+            tk.Button(center_frame, text="Submit", command=process_numbers).grid(
+                row=3, column=0, columnspan=2, padx=5, pady=10
+            )
         
         def delete_input_box2():
             for i in self.images_to_delete:
