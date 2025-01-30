@@ -123,9 +123,9 @@ class MainWindow(BaseWindow):
         image = Image.new("RGBA", (int(size), int(size)), (0, 0, 0, 0))
         draw = ImageDraw.Draw(image)
 
-        base_color = (152, 255, 170)
-        components_color = '#2c3e50'
-        draw.ellipse([0, 0, size, size], fill=base_color)
+        base_color = '#FF8A3C'
+        components_color = "#1E2E3F"
+        draw.ellipse([1, 1, size-1, size-1], fill=base_color)
     
         draw.line((center_x - 70, center_y, center_x + 70, center_y), fill=components_color, width=10)
         draw.line((center_x - 55, center_y - 40, center_x + 55, center_y - 40), fill=components_color, width=10)
@@ -136,7 +136,7 @@ class MainWindow(BaseWindow):
         canvas.create_image(size // 2, size // 2, anchor=tk.CENTER, image=logo_img)
         canvas.image = logo_img
 
-        canvas.create_text(center_x, center_y + 60, text="LaserScan",
+        canvas.create_text(center_x, center_y + 50, text="LaserScan",
                         fill=components_color, font=('Arial', 20, 'bold'))
 
         canvas.configure(bg=WINDOW_CONFIG['bg_color'])
