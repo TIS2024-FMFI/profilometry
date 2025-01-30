@@ -8,7 +8,7 @@ import re
 import numpy as np
 from frontend.base_window import BaseWindow
 from backend.finding_line import LineDetection
-from config import CALIBRATION
+from config import CALIBRATION, WINDOW_CONFIG
 from pygrabber.dshow_graph import FilterGraph
 
 class Scanner(BaseWindow):
@@ -58,7 +58,7 @@ class Scanner(BaseWindow):
     def get_movement_parameters(self):
         # Construct the path to the file
         folder_path = os.path.join(self.actual_project.project_dir, "movement_parameters")
-        file_path = os.path.join(folder_path, "movement_view1.txt")
+        file_path = os.path.join(folder_path, "movement.txt")
         
         # Check if folder and file exist
         if not os.path.exists(folder_path) or not os.path.exists(file_path):
@@ -375,6 +375,7 @@ class Scanner(BaseWindow):
     def back_to_main_menu(self):
         """Navigate back to the main menu."""
         # Stop stream
+        self.root.title(WINDOW_CONFIG['title'])
         self.running = False
         
         #self.actual_project = self.current_project
@@ -483,7 +484,7 @@ class Scanner(BaseWindow):
                 # Save the start_position and shift to a file
                 movement_parameters_path = os.path.join(self.actual_project.project_dir, "movement_parameters")
                 os.makedirs(movement_parameters_path, exist_ok=True)
-                file_path = os.path.join(movement_parameters_path, "movement_view1.txt")
+                file_path = os.path.join(movement_parameters_path, "movement.txt")
                 
                 with open(file_path, "w") as file:
                     file.write(f"{start_position}, {shift}")
@@ -559,7 +560,7 @@ class Scanner(BaseWindow):
         # Dialógové okno pre kalibráciu
         calibration_dialog = tk.Toplevel(self.main_window.root)
         calibration_dialog.title("Calibration")
-        calibration_dialog.geometry("500x600")
+        calibration_dialog.geometry("500x300")
         calibration_dialog.resizable(False, False)
 
         # Kontrola existujúcej kalibrácie
@@ -650,7 +651,7 @@ class Scanner(BaseWindow):
         # Tlačidlo skenovania
         scan_button = tk.Button(
             calibration_dialog, 
-            text="Spustiť kalibráciu", 
+            text="Run Calibration", 
             command=start_calibration_scan, 
             font=("Arial", 12)
         )
@@ -670,7 +671,7 @@ class Scanner(BaseWindow):
                         os.remove(os.path.join(path, file))
 
             # Deleting data files for calibration
-            for file_path in ["calibration_data.txt", "avg_references.txt", "calibration_points.txt"]:
+            for file_path in ["calibration_data.txt"]:
                 path = os.path.join(calibration_path, file_path)
                 path = os.path.normpath(path)
                 if os.path.exists(path):

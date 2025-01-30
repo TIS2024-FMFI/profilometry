@@ -4,6 +4,7 @@ from tkinter import ttk
 import sys
 import os
 import cv2
+from PIL import Image, ImageDraw, ImageTk
 
 # Add the parent directory to the system path for module imports
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -97,7 +98,8 @@ class MainWindow(BaseWindow):
         logo_frame.pack(pady=(0, 50))
 
         # Add the logo
-        self.create_logo(logo_frame)
+        logo_img = self.create_logo(logo_frame)
+        self.root.wm_iconphoto(False, logo_img)
 
         # Button section
         button_frame = tk.Frame(self.current_frame, bg=WINDOW_CONFIG['bg_color'])
@@ -107,48 +109,39 @@ class MainWindow(BaseWindow):
         self.create_main_buttons(button_frame)
 
     def create_logo(self, parent):
-        """Create application logo"""
         logo_size = 150
-        canvas = tk.Canvas(parent, width=logo_size, height=logo_size,
-                           bg=WINDOW_CONFIG['bg_color'], highlightthickness=0)
+        canvas = tk.Canvas(parent, width=logo_size * 1.4, height=logo_size * 1.4,
+                           bg='#E8E8E8', highlightthickness=0)
         canvas.pack()
 
-        # Draw the logo on the canvas
-        self._draw_logo(canvas, logo_size)
+        return self.draw_logo(canvas, logo_size * 1.4)
 
-    def _draw_logo(self, canvas, size):
-        """Draw the logo with gradient circles and text"""
+    def draw_logo(self, canvas, size):
         center_x = size / 2
         center_y = size / 2
 
-        # Gradient circle colors
-        gradient_colors = ['#E8E8E8', '#E0E0E0', '#D8D8D8', '#D0D0D0', '#C8C8C8',
-                           '#C0C0C0', '#B8B8B8', '#B0B0B0', '#A8A8A8', '#A0A0A0']
+        image = Image.new("RGBA", (int(size), int(size)), (0, 0, 0, 0))
+        draw = ImageDraw.Draw(image)
 
-        # Draw concentric gradient circles
-        for i, color in enumerate(gradient_colors):
-            canvas.create_oval(10 + i, 10 + i, size - 10 - i, size - 10 - i,
-                               fill=color, outline='')
+        base_color = '#FF8A3C'
+        components_color = "#1E2E3F"
+        draw.ellipse([1, 1, size-1, size-1], fill=base_color)
+    
+        draw.line((center_x - 70, center_y, center_x + 70, center_y), fill=components_color, width=10)
+        draw.line((center_x - 55, center_y - 40, center_x + 55, center_y - 40), fill=components_color, width=10)
+        r = 12
+        draw.ellipse((center_x - r, center_y - r, center_x + r, center_y + r), fill=components_color, outline=(0, 0, 0, 255), width=2)
 
-        # Add horizontal lines and a central oval
-        canvas.create_line(center_x - 30, center_y, center_x + 30, center_y,
-                           fill='#2c3e50', width=3)
-        canvas.create_line(center_x - 20, center_y - 20, center_x + 20, center_y - 20,
-                           fill='#2c3e50', width=3)
-        canvas.create_oval(center_x - 5, center_y - 5, center_x + 5, center_y + 5,
-                           fill='#2c3e50')
+        logo_img = ImageTk.PhotoImage(image)
+        canvas.create_image(size // 2, size // 2, anchor=tk.CENTER, image=logo_img)
+        canvas.image = logo_img
 
-        # Add text for the logo
-        canvas.create_text(center_x + 1, center_y + 40 + 1,
-                           text="LaserScan", fill='#7f8c8d',
-                           font=('Arial', 12, 'bold'))
-        canvas.create_text(center_x, center_y + 40, text="LaserScan",
-                           fill='#2c3e50', font=('Arial', 12, 'bold'))
+        canvas.create_text(center_x, center_y + 50, text="LaserScan",
+                        fill=components_color, font=('Arial', 20, 'bold'))
 
-        canvas.create_text(center_x + 25 + 1, center_y - 40 + 1,
-                           text="PRO", fill='#7f8c8d', font=('Arial', 8))
-        canvas.create_text(center_x + 25, center_y - 40, text="PRO",
-                           fill='#2c3e50', font=('Arial', 8))
+        canvas.configure(bg=WINDOW_CONFIG['bg_color'])
+
+        return logo_img
 
     def create_main_buttons(self, parent):
         """Create the main menu buttons with respective actions"""
@@ -188,14 +181,17 @@ class MainWindow(BaseWindow):
         """Handle the 'SCAN IMAGE' button click"""
         self.clear_window()
         scanner = Scanner(self, self.actual_project)
+        self.root.title(WINDOW_CONFIG['title'] + ' - Scan Image')
         scanner.start_camera_view()
         
     def handle_view(self):
         """Handle the 'VIEW SCANS' button click"""
         self.clear_window()
+        self.root.title(WINDOW_CONFIG['title'] + ' - View Scans')
         viewer = ViewerWindow('', self, self.actual_project)
 
     def handle_3d(self):
         """Handle the 'SHOW 3D MODEL' button click"""
+        self.root.title(WINDOW_CONFIG['title'] + ' - Show 3D Model')
         self.clear_window()
         model3d = Model3D('', self, self.actual_project)

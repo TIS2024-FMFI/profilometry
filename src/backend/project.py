@@ -1,10 +1,5 @@
 import os
-import cv2
-import numpy as np
-from PIL import Image
-from datetime import datetime
 from tkinter import filedialog
-import json
 from config import LAST_PROJECT_FILE
 
 class Project:
@@ -46,10 +41,6 @@ class Project:
             dir_path = os.path.join(self.project_dir, directory)
             os.makedirs(dir_path, exist_ok=True)
 
-        summary_file = os.path.join(self.project_dir, 'project_summary.txt')
-        if not os.path.exists(summary_file):
-            open(summary_file, 'w').close()
-
         self.save_last_project()
 
         # Print details of the created project
@@ -57,7 +48,6 @@ class Project:
         print("Subdirectories and files created:")
         for directory in required_dirs:
             print(f" - {directory}/")
-        print(f" - project_summary.txt")
 
     def open_project(self):
         """Validate the project structure and create missing components."""
@@ -73,7 +63,7 @@ class Project:
 
     def _check_for_extra_files(self):
         """Check for unexpected files in the main project directory."""
-        allowed_files = {'scans', 'calibration', 'movement_parameters', 'project_summary.txt'}
+        allowed_files = {'scans', 'calibration', 'movement_parameters'}
         current_files = set(os.listdir(self.project_dir))
         return current_files - allowed_files
 
