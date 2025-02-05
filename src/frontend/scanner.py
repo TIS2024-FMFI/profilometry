@@ -166,7 +166,7 @@ class Scanner(BaseWindow):
                     self.initialize_counter(raw_scans_path) 
                 # Case: Ready to scan
                 self.message_label.config(
-                    text=f"Scanning scan number {self.counter}, shifted by {self.start_position+((self.counter-1)*self.shift)} hundredths of a millimeter."
+                    text=f"Scanning scan number {self.counter}, positioned on {self.start_position+((self.counter-1)*self.shift)} hundredths of a millimeter."
                 )
                 self.scan_button.config(state=tk.NORMAL)
 
@@ -239,7 +239,7 @@ class Scanner(BaseWindow):
         """Open a pop-up window to choose a camera."""
         dialog = tk.Toplevel(self.main_window.root)
         dialog.title("Choose a Camera")
-        dialog.geometry("600x500")
+        dialog.geometry("600x350")
         dialog.resizable(False, False)
 
         label = tk.Label(dialog, text="Detecting cameras, please wait...", font=("Arial", 12))
