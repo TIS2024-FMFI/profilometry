@@ -9,6 +9,13 @@ This application uses computer vision techniques to analyze and measure features
 - Visualization of detected features.
 - Compatibility with image folders for batch processing.
 
+## Fixes
+The following issues have been identified for improvement:
+- **3D Model Background:** A background should be added to the 3D model visualization for better contrast and visibility.
+- **Board Inclusion in 3D Model:** The scanning board should be added beneath the object in the 3D visualization to provide a solid base, ensuring the model is not displayed as hollow while keeping other areas clear.
+- **Export Options for 3D Models:** Ensure exported 3D models include all necessary data for rendering in external applications and accurately associate the exported files with the corresponding object.
+- **Calibration Improvements:** If the object is shifted in different scans, the calibration should account for this to ensure accurate measurements.
+
 ## Requirements
 The following Python libraries are required:
 - `opencv-python>=4.5.0`
