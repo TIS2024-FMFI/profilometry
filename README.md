@@ -17,8 +17,14 @@ The following issues have been identified for improvement:
 - **Calibration Improvements:** If the object is shifted in different scans, the calibration should account for this to ensure accurate measurements.
 - **Exposition Control Toggle:** Add a switch button that allows the user to toggle between automatic and fixed exposition settings, enabling greater control over image brightness and consistency during scanning.
 - **Exposition Adjustment Buttons:** Implement **+** and **-** buttons to allow manual exposition settings, giving users precise control over exposition levels during scanning.
+- **Implementing a Stepper Motor:** Implement a Stepper Motor in the scan_profile function according to requirements catalog in *3.1.3 paragraph. The stepper motor will be controlled via a microcontroller, with movement commands sent through serial communication (e.g., using pyserial). Suggested implementation steps:
+1. Initialize serial communication with the microcontroller – A communication object will be added to the Scanner class. 
+2. Move the stepper motor before each scan – The scan_profile function will trigger a movement command.
+3. Wait for movement completion – Using time.sleep() or waiting for confirmation from the microcontroller.
+4. Capture an image – The existing scan_profile functionality will execute after movement is finished.
+5. Repeat the process – The cycle continues until all scans are completed.
 
-## Requirements
+
 The following Python libraries are required:
 - `opencv-python>=4.5.0`
 - `numpy>=1.19.0`
